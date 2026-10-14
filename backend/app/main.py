@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Literal
 
 from fastapi import FastAPI, HTTPException, WebSocket
-from fastapi.responses import FileResponse
-from pydantic import BaseModel
+from fastapi.responses import FileResponse, JSONResponse
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ProjectIn(BaseModel):
@@ -45,6 +45,27 @@ class EngramIn(BaseModel):
     lecciones: str = ""
 
 
+class DebateIn(BaseModel):
+    project_id: str
+    backend_session_id: str
+    frontend_session_id: str
+
+
+class ProposeIn(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    from_: Literal["backend", "frontend"] = Field(default="backend", alias="from")
+    content: str
+
+
+class ApproveIn(BaseModel):
+    approve: bool
+
+
+class LockIn(BaseModel):
+    path: str
+    locked_by: str
+
+
 def _embed(text: str, dim: int = 64) -> list[float]:
     import re
 
@@ -75,6 +96,12 @@ def create_app(gateway_fake: bool = True) -> FastAPI:
     qc.recreate_collection("engrams", vectors_config=VectorParams(size=64, distance=Distance.COSINE))
     engram_seq: dict[str, int] = {}
     engram_counter = [0]
+    debates: dict[str, dict] = {}
+    MAX_TURNS = 5
+    locks: dict[str, dict] = {}
+
+    def _other(who: str) -> str:
+        return "frontend" if who == "backend" else "backend"
 
     def _card_view(card: dict) -> dict:
         done = {c["id"] for c in cards.values() if c["status"] == "listo"}
@@ -212,6 +239,81 @@ def create_app(gateway_fake: bool = True) -> FastAPI:
             {"card_id": h.payload["card_id"], "score": h.score, **h.payload}
             for h in res.points
         ]
+
+    @app.post("/api/debates")
+    def create_debate(body: DebateIn):
+        did = str(uuid.uuid4())[:8]
+        debates[did] = {
+            "id": did,
+            "project_id": body.project_id,
+            "backend_session_id": body.backend_session_id,
+            "frontend_session_id": body.frontend_session_id,
+            "turns": [],
+            "pending": None,
+            "turn_count": 0,
+            "status": "open",
+        }
+        return debates[did]
+
+    @app.get("/api/debates/{did}")
+    def get_debate(did: str):
+        if did not in debates:
+            raise HTTPException(404, "debate not found")
+        return debates[did]
+
+    @app.post("/api/debates/{did}/propose")
+    def propose(did: str, body: ProposeIn):
+        d = debates.get(did)
+        if d is None:
+            raise HTTPException(404, "debate not found")
+        if d["status"] == "needs_intervention" or d["turn_count"] >= MAX_TURNS:
+            d["status"] = "needs_intervention"
+            raise HTTPException(409, "cap de turnos: intervención requerida")
+        if d["pending"] is not None:
+            raise HTTPException(409, "ya hay propuesta pendiente")
+        d["pending"] = {"from": body.from_, "content": body.content}
+        d["status"] = "waiting_approval"
+        return d
+
+    @app.post("/api/debates/{did}/approve")
+    def approve(did: str, body: ApproveIn):
+        d = debates.get(did)
+        if d is None:
+            raise HTTPException(404, "debate not found")
+        if d["pending"] is None:
+            raise HTTPException(409, "nada pendiente")
+        if body.approve:
+            p = d["pending"]
+            d["turns"].append({"from": p["from"], "to": _other(p["from"]), "content": p["content"]})
+            d["pending"] = None
+            d["turn_count"] += 1
+            d["status"] = "open"
+        else:
+            d["pending"] = None
+            d["status"] = "done"
+        return d
+
+    @app.post("/api/locks")
+    def acquire_lock(body: LockIn):
+        cur = locks.get(body.path)
+        if cur is not None and cur["locked_by"] != body.locked_by:
+            return JSONResponse(status_code=409, content={**cur, "error": "locked"})
+        locks[body.path] = {"path": body.path, "locked_by": body.locked_by}
+        return locks[body.path]
+
+    @app.get("/api/locks")
+    def list_locks():
+        return list(locks.values())
+
+    @app.delete("/api/locks")
+    def release_lock(path: str = "", locked_by: str = ""):
+        cur = locks.get(path)
+        if cur is None:
+            raise HTTPException(404, "lock not found")
+        if cur["locked_by"] != locked_by:
+            return JSONResponse(status_code=409, content={**cur, "error": "locked"})
+        del locks[path]
+        return {"released": path}
 
     @app.websocket("/ws/sessions/{sid}")
     async def chat_ws(ws: WebSocket, sid: str):

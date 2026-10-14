@@ -19,6 +19,13 @@
   <ul id="kanban-edges"></ul>
   <h2>Tokens</h2>
   <div id="tokens-panel" data-total="0">0 tokens</div>
+  <h2>Debate</h2>
+  <div id="debate-view">
+    <div data-agent="backend"><h3>Backend</h3><ul></ul></div>
+    <div data-debate="turns"><h3>Debate</h3><ul></ul></div>
+    <div data-agent="frontend"><h3>Frontend</h3><ul></ul></div>
+  </div>
+  <button id="approve-btn">aprobar envío</button>
   <script>
     let ws = null, sid = null;
     const log = document.getElementById('chat-log');

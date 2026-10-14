@@ -30,3 +30,12 @@ def test_gui_tiene_kanban():
 def test_gui_tiene_panel_tokens():
     c = TestClient(create_app(gateway_fake=True))
     assert 'id="tokens-panel"' in c.get("/").text
+
+
+def test_gui_tiene_vista_debate():
+    c = TestClient(create_app(gateway_fake=True))
+    html = c.get("/").text
+    assert 'id="debate-view"' in html
+    assert 'data-agent="backend"' in html
+    assert 'data-agent="frontend"' in html
+    assert 'id="approve-btn"' in html
