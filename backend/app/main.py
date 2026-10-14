@@ -87,6 +87,7 @@ def create_app(
     db_path: str | None = None,
     qdrant_path: str | None = None,
     gateway=None,
+    frontend_dist: str | None = None,
 ) -> FastAPI:
     app = FastAPI()
     if store is None:
@@ -386,6 +387,13 @@ def create_app(
 
     @app.get("/")
     def gui():
+        dist = Path(frontend_dist) if frontend_dist else (
+            Path(__file__).parent.parent.parent / "frontend" / "dist"
+        )
+        if dist.is_dir():
+            dist = dist / "index.html"
+        if dist.is_file():
+            return FileResponse(dist)
         return FileResponse(Path(__file__).parent.parent / "static" / "index.html")
 
     return app
