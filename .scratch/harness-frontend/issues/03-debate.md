@@ -6,7 +6,11 @@
 
 **Status:** ready-for-agent
 
-- [ ] Columnas backend|debate|frontend con turnos y pendientes
-- [ ] Botón aprobar/rechazar funcional
-- [ ] Estado needs_intervention visible
-- [ ] E2E manual documentado
+- [x] Columnas backend|debate|frontend con turnos y pendientes
+- [x] Botón aprobar/rechazar funcional
+- [x] Estado needs_intervention visible
+- [ ] E2E manual (crear 2 sesiones, debate, proponer, aprobar, llegar a cap)
+
+## Comments
+
+Implementado (`views/Debate.tsx` + `lib/debate.ts` con 2 tests). Proponer/aprobar vía api.ts.

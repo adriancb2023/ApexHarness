@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { api, type Project, type Session } from './lib/api'
 import Chat from './views/Chat'
+import Debate from './views/Debate'
 import Tokens from './views/Tokens'
 
 export default function App() {
@@ -85,6 +86,7 @@ export default function App() {
         </ul>
       </section>
       <Chat sessionId={sessionId} />
+      <Debate projectId={projectId} sessions={sessions} />
       <Tokens projectId={projectId} />
     </main>
   )
