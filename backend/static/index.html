@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><title>ApexHarness</title></head>
+<body>
+  <h1>ApexHarness</h1>
+  <select id="project-selector"></select>
+  <ul id="session-list"></ul>
+  <script>
+    async function boot() {
+      const sel = document.getElementById('project-selector');
+      const list = document.getElementById('session-list');
+      async function refreshSessions(pid) {
+        const s = await (await fetch('/api/sessions?project_id=' + pid)).json();
+        list.innerHTML = s.map(x => `<li>${x.title} (${x.id})</li>`).join('');
+      }
+      sel.onchange = () => refreshSessions(sel.value);
+    }
+    boot();
+  </script>
+</body>
+</html>
