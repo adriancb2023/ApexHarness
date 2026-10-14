@@ -5,17 +5,33 @@
   <h1>ApexHarness</h1>
   <select id="project-selector"></select>
   <ul id="session-list"></ul>
+  <div id="task-status" data-state="idle">idle</div>
+  <div id="chat-log"></div>
+  <input id="chat-input" placeholder="habla con opencode">
+  <button id="chat-send">enviar</button>
   <script>
-    async function boot() {
-      const sel = document.getElementById('project-selector');
-      const list = document.getElementById('session-list');
-      async function refreshSessions(pid) {
-        const s = await (await fetch('/api/sessions?project_id=' + pid)).json();
-        list.innerHTML = s.map(x => `<li>${x.title} (${x.id})</li>`).join('');
-      }
-      sel.onchange = () => refreshSessions(sel.value);
+    let ws = null, sid = null;
+    const log = document.getElementById('chat-log');
+    const status = document.getElementById('task-status');
+    function setStatus(s) { status.dataset.state = s; status.textContent = s; }
+    async function openChat(sessionId) {
+      sid = sessionId;
+      if (ws) ws.close();
+      setStatus('working');
+      ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/ws/sessions/' + sid);
+      ws.onmessage = (ev) => {
+        const m = JSON.parse(ev.data);
+        if (m.delta) log.innerHTML += `<span>${m.delta}</span>`;
+        if (m.done) setStatus(m.status === 'done' ? 'done' : 'needs_approval');
+      };
+      ws.onclose = () => { if (status.dataset.state === 'working') setStatus('done'); };
     }
-    boot();
+    document.getElementById('chat-send').onclick = () => {
+      const inp = document.getElementById('chat-input');
+      setStatus('working');
+      if (ws && ws.readyState === 1) ws.send(JSON.stringify({content: inp.value}));
+      inp.value = '';
+    };
   </script>
 </body>
 </html>

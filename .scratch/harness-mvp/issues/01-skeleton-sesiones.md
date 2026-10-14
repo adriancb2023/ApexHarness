@@ -6,7 +6,11 @@
 
 **Status:** ready-for-agent
 
-- [ ] Crear sesión ligada a proyecto y listarla por proyecto vía API HTTP
-- [ ] Cambiar de proyecto conserva sesiones y `cwd` aislado por workspace
-- [ ] GUI muestra selector de proyectos + lista de sesiones
-- [ ] Tests externos vía TestClient con gateway fake, sin `serve` real
+- [x] Crear sesión ligada a proyecto y listarla por proyecto vía API HTTP
+- [x] Cambiar de proyecto conserva sesiones y `cwd` aislado por workspace
+- [x] GUI muestra selector de proyectos + lista de sesiones
+- [x] Tests externos vía TestClient con gateway fake, sin `serve` real
+
+## Comments
+
+Implementado en `b621763` (API sesiones + GUI estática + gateway fake, 2 tests en verde). Deuda: stores en memoria (SQLite file pendiente), GUI estática (Vite React desde ticket 03), integración `serve` real pendiente (ticket 02).
