@@ -25,3 +25,8 @@ def test_gui_tiene_kanban():
     assert 'id="kanban-board"' in r.text
     for col in ("backlog", "progreso", "pruebas", "listo"):
         assert f'data-col="{col}"' in r.text
+
+
+def test_gui_tiene_panel_tokens():
+    c = TestClient(create_app(gateway_fake=True))
+    assert 'id="tokens-panel"' in c.get("/").text

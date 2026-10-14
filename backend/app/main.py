@@ -1,3 +1,4 @@
+import time
 import uuid
 from pathlib import Path
 
@@ -20,6 +21,7 @@ class SessionIn(BaseModel):
 
 class MessageIn(BaseModel):
     content: str
+    feature: str = ""
 
 
 class CardIn(BaseModel):
@@ -44,6 +46,7 @@ def create_app(gateway_fake: bool = True) -> FastAPI:
     sessions: dict[str, dict] = {}
     messages: dict[str, list] = {}
     cards: dict[str, dict] = {}
+    feature_tokens: dict[str, dict[str, int]] = {}
 
     def _card_view(card: dict) -> dict:
         done = {c["id"] for c in cards.values() if c["status"] == "listo"}
@@ -84,10 +87,21 @@ def create_app(gateway_fake: bool = True) -> FastAPI:
             raise HTTPException(404, "session not found")
         # gateway_fake: eco determinista en vez de `opencode serve`
         reply = f"eco: {body.content}"
-        toks = _fake_tokens(body.content) + _fake_tokens(reply)
-        messages.setdefault(sid, []).append({"role": "user", "content": body.content})
-        messages[sid].append({"role": "assistant", "content": reply})
+        tok_u = _fake_tokens(body.content)
+        tok_a = _fake_tokens(reply)
+        toks = tok_u + tok_a
+        now = time.time()
+        messages.setdefault(sid, []).append(
+            {"role": "user", "content": body.content, "tokens": tok_u, "ts": now, "feature": body.feature}
+        )
+        messages[sid].append(
+            {"role": "assistant", "content": reply, "tokens": tok_a, "ts": now, "feature": body.feature}
+        )
         sessions[sid]["tokens"] = sessions[sid].get("tokens", 0) + toks
+        if body.feature:
+            pid = sessions[sid]["project_id"]
+            feature_tokens.setdefault(pid, {}).setdefault(body.feature, 0)
+            feature_tokens[pid][body.feature] += toks
         return {"reply": reply, "tokens": toks, "status": "done"}
 
     @app.get("/api/sessions/{sid}/messages")
@@ -95,6 +109,20 @@ def create_app(gateway_fake: bool = True) -> FastAPI:
         if sid not in sessions:
             raise HTTPException(404, "session not found")
         return messages.get(sid, [])
+
+    @app.get("/api/tokens/summary")
+    def tokens_summary(project_id: str = ""):
+        by_session = {
+            s["id"]: s.get("tokens", 0)
+            for s in sessions.values()
+            if s["project_id"] == project_id
+        }
+        return {
+            "project_id": project_id,
+            "total_tokens": sum(by_session.values()),
+            "by_session": by_session,
+            "by_feature": feature_tokens.get(project_id, {}),
+        }
 
     @app.post("/api/cards")
     def create_card(body: CardIn):
@@ -136,10 +164,15 @@ def create_app(gateway_fake: bool = True) -> FastAPI:
             content = str(data.get("content", ""))
             reply = f"eco: {content}"
             toks = _fake_tokens(content) + _fake_tokens(reply)
+            now = time.time()
             await ws.send_json({"delta": "eco: "})
             await ws.send_json({"delta": content})
-            messages.setdefault(sid, []).append({"role": "user", "content": content})
-            messages[sid].append({"role": "assistant", "content": reply})
+            messages.setdefault(sid, []).append(
+                {"role": "user", "content": content, "tokens": _fake_tokens(content), "ts": now, "feature": ""}
+            )
+            messages[sid].append(
+                {"role": "assistant", "content": reply, "tokens": _fake_tokens(reply), "ts": now, "feature": ""}
+            )
             sessions[sid]["tokens"] = sessions[sid].get("tokens", 0) + toks
             await ws.send_json({"done": True, "tokens": toks, "status": "done"})
 

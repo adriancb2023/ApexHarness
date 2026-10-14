@@ -17,6 +17,8 @@
     <div data-col="listo"><h3>Listo</h3><ul></ul></div>
   </div>
   <ul id="kanban-edges"></ul>
+  <h2>Tokens</h2>
+  <div id="tokens-panel" data-total="0">0 tokens</div>
   <script>
     let ws = null, sid = null;
     const log = document.getElementById('chat-log');
@@ -40,14 +42,19 @@
       if (ws && ws.readyState === 1) ws.send(JSON.stringify({content: inp.value}));
       inp.value = '';
     };
-    async function refreshKanban(pid) {
-      const cards = await (await fetch('/api/cards?project_id=' + pid)).json();
+    async function refreshKanban(pid) {      const cards = await (await fetch('/api/cards?project_id=' + pid)).json();
       for (const col of document.querySelectorAll('#kanban-board [data-col]')) {
         const ul = col.querySelector('ul');
         ul.innerHTML = cards.filter(k => k.status === col.dataset.col)
           .map(k => `<li data-card="${k.id}" data-blocked="${k.blocked}">${k.title}${k.blocked ? ' ⛔' : ''}</li>`).join('');
       }
       document.getElementById('kanban-edges').innerHTML = cards.flatMap(k => k.depends_on.map(d => `<li data-edge="${d}-&gt;${k.id}">${d} -&gt; ${k.id}</li>`)).join('');
+    }
+    async function refreshTokens(pid) {
+      const s = await (await fetch('/api/tokens/summary?project_id=' + pid)).json();
+      const el = document.getElementById('tokens-panel');
+      el.dataset.total = s.total_tokens;
+      el.textContent = s.total_tokens + ' tokens';
     }
   </script>
 </body>
