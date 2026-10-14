@@ -6,8 +6,12 @@
 
 **Status:** ready-for-agent
 
-- [ ] Auth Basic opencode:service.json y base URL configurable/descubierta
-- [ ] Sesiones reales listadas y vinculadas por opencode_session_id
-- [ ] Tokens reales en summary en modo real
-- [ ] Env HARNESS_DB/QDRANT/OPENCODE cableado en app de módulo
-- [ ] Tests con HTTP mockeado, sin red ni gasto
+- [x] Auth Basic opencode:service.json y base URL configurable/descubierta
+- [x] Sesiones reales listadas y vinculadas por opencode_session_id
+- [x] Tokens reales en summary en modo real
+- [x] Env HARNESS_DB/QDRANT/OPENCODE cableado en app de módulo
+- [x] Tests con HTTP mockeado, sin red ni gasto
+
+## Comments
+
+Implementado (`ServeGateway` + discovery + `build_app`, 4 tests nuevos). Verificado en vivo solo-lectura: 50 sesiones, tokens parseados. Hallazgo: `opencode` es shim ps1 — discovery usa el exe real. Prompt/streaming en 03.

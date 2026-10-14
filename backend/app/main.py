@@ -21,6 +21,7 @@ class ProjectIn(BaseModel):
 class SessionIn(BaseModel):
     project_id: str
     title: str = ""
+    opencode_session_id: str | None = None
 
 
 class MessageIn(BaseModel):
@@ -85,11 +86,13 @@ def create_app(
     store=None,
     db_path: str | None = None,
     qdrant_path: str | None = None,
+    gateway=None,
 ) -> FastAPI:
     app = FastAPI()
     if store is None:
         store = SqliteStore(db_path) if db_path else MemoryStore()
-    gateway = FakeGateway()
+    if gateway is None:
+        gateway = FakeGateway()
 
     from qdrant_client import QdrantClient
     from qdrant_client.models import Distance, PointStruct, VectorParams
@@ -132,6 +135,7 @@ def create_app(
             "project_id": body.project_id,
             "title": body.title,
             "cwd": proj["cwd"],
+            "opencode_session_id": body.opencode_session_id,
         }
         store.save_session(session)
         return session
@@ -165,7 +169,11 @@ def create_app(
 
     @app.get("/api/tokens/summary")
     def tokens_summary(project_id: str = ""):
-        by_session = {s["id"]: s.get("tokens", 0) for s in store.list_sessions(project_id)}
+        by_session = {}
+        for s in store.list_sessions(project_id):
+            linked = s.get("opencode_session_id")
+            real = gateway.linked_tokens(linked) if linked else None
+            by_session[s["id"]] = real if real is not None else s.get("tokens", 0)
         return {
             "project_id": project_id,
             "total_tokens": sum(by_session.values()),
@@ -342,6 +350,10 @@ def create_app(
             store.add_session_tokens(sid, toks)
             await ws.send_json({"done": True, "tokens": toks, "status": "done"})
 
+    @app.get("/api/opencode/sessions")
+    def opencode_sessions():
+        return gateway.list_sessions()
+
     @app.get("/")
     def gui():
         return FileResponse(Path(__file__).parent.parent / "static" / "index.html")
@@ -349,4 +361,25 @@ def create_app(
     return app
 
 
-app = create_app()
+def build_app() -> FastAPI:
+    import os
+
+    from app.gateway import ServeGateway, load_config
+
+    cfg = load_config()
+    gateway = None
+    if (
+        cfg["gateway"] == "serve"
+        and cfg["opencode_url"]
+        and cfg["opencode_password"]
+    ):
+        gateway = ServeGateway(cfg["opencode_url"], cfg["opencode_password"])
+    return create_app(
+        gateway_fake=gateway is None,
+        db_path=cfg["db_path"],
+        qdrant_path=cfg["qdrant_path"],
+        gateway=gateway,
+    )
+
+
+app = build_app()
