@@ -6,6 +6,10 @@
 
 **Status:** ready-for-agent
 
-- [ ] Mensajes con tokens/ts/feature sobreviven a reinicio
-- [ ] Resumen de tokens por sesión/proyecto/feature consistente tras reinicio
-- [ ] Tests actuales de chat y tokens siguen verdes sin modificarse
+- [x] Mensajes con tokens/ts/feature sobreviven a reinicio
+- [x] Resumen de tokens por sesión/proyecto/feature consistente tras reinicio
+- [x] Tests actuales de chat y tokens siguen verdes sin modificarse
+
+## Comments
+
+Implementado (tablas messages + feature_tokens, 1 test nuevo). Orden por `seq` autoincremental.

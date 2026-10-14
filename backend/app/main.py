@@ -87,9 +87,7 @@ def create_app(gateway_fake: bool = True, store=None, db_path: str | None = None
     app = FastAPI()
     if store is None:
         store = SqliteStore(db_path) if db_path else MemoryStore()
-    messages: dict[str, list] = {}
     cards: dict[str, dict] = {}
-    feature_tokens: dict[str, dict[str, int]] = {}
 
     from qdrant_client import QdrantClient
     from qdrant_client.models import Distance, PointStruct, VectorParams
@@ -151,24 +149,18 @@ def create_app(gateway_fake: bool = True, store=None, db_path: str | None = None
         tok_a = _fake_tokens(reply)
         toks = tok_u + tok_a
         now = time.time()
-        messages.setdefault(sid, []).append(
-            {"role": "user", "content": body.content, "tokens": tok_u, "ts": now, "feature": body.feature}
-        )
-        messages[sid].append(
-            {"role": "assistant", "content": reply, "tokens": tok_a, "ts": now, "feature": body.feature}
-        )
+        store.append_message(sid, {"role": "user", "content": body.content, "tokens": tok_u, "ts": now, "feature": body.feature})
+        store.append_message(sid, {"role": "assistant", "content": reply, "tokens": tok_a, "ts": now, "feature": body.feature})
         store.add_session_tokens(sid, toks)
         if body.feature:
-            pid = session["project_id"]
-            feature_tokens.setdefault(pid, {}).setdefault(body.feature, 0)
-            feature_tokens[pid][body.feature] += toks
+            store.add_feature_tokens(session["project_id"], body.feature, toks)
         return {"reply": reply, "tokens": toks, "status": "done"}
 
     @app.get("/api/sessions/{sid}/messages")
     def get_messages(sid: str):
         if store.get_session(sid) is None:
             raise HTTPException(404, "session not found")
-        return messages.get(sid, [])
+        return store.list_messages(sid)
 
     @app.get("/api/tokens/summary")
     def tokens_summary(project_id: str = ""):
@@ -177,7 +169,7 @@ def create_app(gateway_fake: bool = True, store=None, db_path: str | None = None
             "project_id": project_id,
             "total_tokens": sum(by_session.values()),
             "by_session": by_session,
-            "by_feature": feature_tokens.get(project_id, {}),
+            "by_feature": store.get_feature_tokens(project_id),
         }
 
     @app.post("/api/cards")
@@ -334,12 +326,8 @@ def create_app(gateway_fake: bool = True, store=None, db_path: str | None = None
             now = time.time()
             await ws.send_json({"delta": "eco: "})
             await ws.send_json({"delta": content})
-            messages.setdefault(sid, []).append(
-                {"role": "user", "content": content, "tokens": _fake_tokens(content), "ts": now, "feature": ""}
-            )
-            messages[sid].append(
-                {"role": "assistant", "content": reply, "tokens": _fake_tokens(reply), "ts": now, "feature": ""}
-            )
+            store.append_message(sid, {"role": "user", "content": content, "tokens": _fake_tokens(content), "ts": now, "feature": ""})
+            store.append_message(sid, {"role": "assistant", "content": reply, "tokens": _fake_tokens(reply), "ts": now, "feature": ""})
             store.add_session_tokens(sid, toks)
             await ws.send_json({"done": True, "tokens": toks, "status": "done"})
 
