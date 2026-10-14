@@ -88,6 +88,10 @@ export const api = {
   acquireLock: (path: string, locked_by: string) =>
     req<{ path: string; locked_by: string }>('/api/locks', json({ path, locked_by })),
   opencodeSessions: () => req<{ id: string; title: string }[]>('/api/opencode/sessions'),
+  readFile: (project_id: string, path: string) =>
+    req<{ path: string; content: string }>(
+      `/api/files?project_id=${project_id}&path=${encodeURIComponent(path)}`,
+    ),
   consolidateEngram: (card_id: string, problema: string, solucion = '') =>
     req<{ ok: boolean }>(
       '/api/engrams',

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
-import { api, type Project, type Session } from './lib/api'
+import { api, type Card, type Project, type Session } from './lib/api'
 import Chat from './views/Chat'
 import Debate from './views/Debate'
+import FileViewer from './views/FileViewer'
+import Kanban from './views/Kanban'
 import Tokens from './views/Tokens'
 
 export default function App() {
@@ -9,6 +11,7 @@ export default function App() {
   const [projectId, setProjectId] = useState('')
   const [sessions, setSessions] = useState<Session[]>([])
   const [sessionId, setSessionId] = useState('')
+  const [card, setCard] = useState<Card | null>(null)
   const [name, setName] = useState('')
   const [cwd, setCwd] = useState('')
 
@@ -87,6 +90,8 @@ export default function App() {
       </section>
       <Chat sessionId={sessionId} />
       <Debate projectId={projectId} sessions={sessions} />
+      <Kanban projectId={projectId} onSelect={setCard} />
+      <FileViewer projectId={projectId} card={card} />
       <Tokens projectId={projectId} />
     </main>
   )

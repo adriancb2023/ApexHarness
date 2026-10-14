@@ -385,6 +385,19 @@ def create_app(
     def opencode_sessions():
         return gateway.list_sessions()
 
+    @app.get("/api/files")
+    def read_file(project_id: str = "", path: str = ""):
+        proj = store.get_project(project_id)
+        if proj is None:
+            raise HTTPException(404, "project not found")
+        base = Path(proj["cwd"]).resolve()
+        target = (base / path).resolve()
+        if target != base and base not in target.parents:
+            raise HTTPException(403, "fuera del workspace")
+        if not target.is_file():
+            raise HTTPException(404, "file not found")
+        return {"path": path, "content": target.read_text(encoding="utf-8", errors="replace")[:200_000]}
+
     @app.get("/")
     def gui():
         dist = Path(frontend_dist) if frontend_dist else (
