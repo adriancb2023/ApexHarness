@@ -1,6 +1,8 @@
 import uuid
 from pathlib import Path
 
+from typing import Literal
+
 from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -20,6 +22,18 @@ class MessageIn(BaseModel):
     content: str
 
 
+class CardIn(BaseModel):
+    project_id: str
+    title: str
+    feature: str = ""
+    files: list[str] = []
+    depends_on: list[str] = []
+
+
+class CardPatch(BaseModel):
+    status: Literal["backlog", "progreso", "pruebas", "listo"]
+
+
 def _fake_tokens(content: str) -> int:
     return max(1, len(content) // 4 + 1)
 
@@ -29,6 +43,11 @@ def create_app(gateway_fake: bool = True) -> FastAPI:
     projects: dict[str, dict] = {}
     sessions: dict[str, dict] = {}
     messages: dict[str, list] = {}
+    cards: dict[str, dict] = {}
+
+    def _card_view(card: dict) -> dict:
+        done = {c["id"] for c in cards.values() if c["status"] == "listo"}
+        return {**card, "blocked": any(d not in done for d in card["depends_on"])}
 
     @app.get("/health")
     def health():
@@ -76,6 +95,31 @@ def create_app(gateway_fake: bool = True) -> FastAPI:
         if sid not in sessions:
             raise HTTPException(404, "session not found")
         return messages.get(sid, [])
+
+    @app.post("/api/cards")
+    def create_card(body: CardIn):
+        cid = str(uuid.uuid4())[:8]
+        cards[cid] = {
+            "id": cid,
+            "project_id": body.project_id,
+            "title": body.title,
+            "feature": body.feature,
+            "files": body.files,
+            "depends_on": body.depends_on,
+            "status": "backlog",
+        }
+        return _card_view(cards[cid])
+
+    @app.get("/api/cards")
+    def list_cards(project_id: str = ""):
+        return [_card_view(c) for c in cards.values() if c["project_id"] == project_id]
+
+    @app.patch("/api/cards/{cid}")
+    def patch_card(cid: str, body: CardPatch):
+        if cid not in cards:
+            raise HTTPException(404, "card not found")
+        cards[cid]["status"] = body.status
+        return _card_view(cards[cid])
 
     @app.websocket("/ws/sessions/{sid}")
     async def chat_ws(ws: WebSocket, sid: str):
