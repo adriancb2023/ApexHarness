@@ -9,6 +9,7 @@
   <div id="chat-log"></div>
   <input id="chat-input" placeholder="habla con opencode">
   <button id="chat-send">enviar</button>
+  <button id="interrupt-btn">interrumpir</button>
   <h2>Kanban</h2>
   <div id="kanban-board">
     <div data-col="backlog"><h3>Backlog</h3><ul></ul></div>
@@ -48,6 +49,11 @@
       setStatus('working');
       if (ws && ws.readyState === 1) ws.send(JSON.stringify({content: inp.value}));
       inp.value = '';
+    };
+    document.getElementById('interrupt-btn').onclick = async () => {
+      if (!sid) return;
+      await fetch('/api/sessions/' + sid + '/interrupt', {method: 'POST'});
+      setStatus('done');
     };
     async function refreshKanban(pid) {      const cards = await (await fetch('/api/cards?project_id=' + pid)).json();
       for (const col of document.querySelectorAll('#kanban-board [data-col]')) {

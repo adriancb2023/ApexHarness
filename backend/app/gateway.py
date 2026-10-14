@@ -47,6 +47,44 @@ class FakeGateway(OpencodeGateway):
         return None
 
 
+def _normalize_message(raw: dict) -> dict:
+    kind = raw.get("type", "")
+    if kind == "user":
+        return {"role": "user", "text": raw.get("text", ""), "done": True, "tokens": 0}
+    if kind == "assistant":
+        text = "".join(p.get("text", "") for p in raw.get("content", []) if p.get("type") == "text")
+        toks = raw.get("tokens", {})
+        done = bool(raw.get("finish") or (raw.get("time") or {}).get("completed"))
+        return {
+            "role": "assistant",
+            "text": text,
+            "done": done,
+            "tokens": toks.get("input", 0) + toks.get("output", 0) + toks.get("reasoning", 0),
+        }
+    return {"role": kind, "text": "", "done": True, "tokens": 0}
+
+
+def bridge_prompt(gateway, session_id: str, send, sleep=None, max_polls: int = 120) -> dict:
+    import time as _time
+
+    rest = sleep or _time.sleep
+    seen = ""
+    last = {"text": "", "tokens": 0}
+    for _ in range(max_polls):
+        assistants = [m for m in gateway.messages(session_id) if m["role"] == "assistant"]
+        if assistants:
+            current = assistants[-1]
+            if len(current["text"]) > len(seen):
+                send({"delta": current["text"][len(seen):]})
+                seen = current["text"]
+            last = current
+            if current["done"]:
+                break
+        rest(1.0)
+    send({"done": True, "tokens": last["tokens"], "status": "done"})
+    return last
+
+
 def _normalize_session(raw: dict) -> dict:
     toks = raw.get("tokens", {})
     return {
@@ -81,8 +119,29 @@ class ServeGateway(OpencodeGateway):
     def linked_tokens(self, opencode_session_id: str) -> int | None:
         return self.get_tokens(opencode_session_id)
 
+    def prompt(self, session_id: str, text: str) -> str:
+        r = self._client.post(
+            self.base_url + f"/api/session/{session_id}/prompt",
+            headers={"Authorization": self._auth},
+            json={"text": text},
+        )
+        r.raise_for_status()
+        return r.json()["data"]["id"]
+
+    def interrupt(self, session_id: str) -> bool:
+        r = self._client.post(
+            self.base_url + f"/api/session/{session_id}/interrupt",
+            headers={"Authorization": self._auth},
+        )
+        r.raise_for_status()
+        return bool(r.json().get("interrupted", False))
+
+    def messages(self, session_id: str) -> list:
+        data = self._get(f"/api/session/{session_id}/message").get("data", [])
+        return [_normalize_message(m) for m in data]
+
     def send(self, content: str) -> dict:
-        raise NotImplementedError("ticket 03")
+        raise NotImplementedError("usar prompt() + messages() en modo real")
 
     def deltas(self, content: str) -> list[str]:
         raise NotImplementedError("ticket 03")

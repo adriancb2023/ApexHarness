@@ -167,6 +167,14 @@ def create_app(
             raise HTTPException(404, "session not found")
         return store.list_messages(sid)
 
+    @app.post("/api/sessions/{sid}/interrupt")
+    def interrupt_session(sid: str):
+        session = store.get_session(sid)
+        link = (session or {}).get("opencode_session_id")
+        if session is None or not link or not hasattr(gateway, "interrupt"):
+            raise HTTPException(409, "sin sesión real vinculada")
+        return {"interrupted": gateway.interrupt(link)}
+
     @app.get("/api/tokens/summary")
     def tokens_summary(project_id: str = ""):
         by_session = {}
@@ -339,6 +347,28 @@ def create_app(
             except Exception:
                 break
             content = str(data.get("content", ""))
+            link = (store.get_session(sid) or {}).get("opencode_session_id")
+            if link and hasattr(gateway, "prompt"):
+                import anyio
+                from functools import partial
+
+                from app.gateway import bridge_prompt, estimate_tokens
+
+                now = time.time()
+                gateway.prompt(link, content)
+                store.append_message(sid, {"role": "user", "content": content,
+                                           "tokens": estimate_tokens(content), "ts": now, "feature": ""})
+
+                def _send(msg):
+                    anyio.from_thread.run(ws.send_json, msg)
+
+                result = await anyio.to_thread.run_sync(
+                    partial(bridge_prompt, gateway, link, _send)
+                )
+                store.append_message(sid, {"role": "assistant", "content": result["text"],
+                                           "tokens": result["tokens"], "ts": time.time(), "feature": ""})
+                store.add_session_tokens(sid, estimate_tokens(content) + result["tokens"])
+                continue
             result = gateway.send(content)
             reply = result["reply"]
             toks = result["tokens"]

@@ -39,3 +39,8 @@ def test_gui_tiene_vista_debate():
     assert 'data-agent="backend"' in html
     assert 'data-agent="frontend"' in html
     assert 'id="approve-btn"' in html
+
+
+def test_gui_tiene_boton_interrupt():
+    c = TestClient(create_app(gateway_fake=True))
+    assert 'id="interrupt-btn"' in c.get("/").text
