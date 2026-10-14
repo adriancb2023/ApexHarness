@@ -1,14 +1,21 @@
 import { useEffect, useState } from 'react'
 import { api, type Project, type Session } from './lib/api'
+import Chat from './views/Chat'
+import Tokens from './views/Tokens'
 
 export default function App() {
   const [projects, setProjects] = useState<Project[]>([])
   const [projectId, setProjectId] = useState('')
   const [sessions, setSessions] = useState<Session[]>([])
+  const [sessionId, setSessionId] = useState('')
   const [name, setName] = useState('')
   const [cwd, setCwd] = useState('')
 
   useEffect(() => {
+    if (!projectId) {
+      setSessions([])
+      return
+    }
     api.listSessions(projectId).then(setSessions).catch(() => setSessions([]))
   }, [projectId])
 
@@ -21,47 +28,64 @@ export default function App() {
   }
 
   return (
-    <main className="p-4 max-w-2xl mx-auto">
+    <main className="p-4 max-w-4xl mx-auto flex flex-col gap-6">
       <h1 className="text-xl font-bold">ApexHarness</h1>
-      <div className="flex gap-2 mt-4">
-        <input
-          aria-label="nombre"
-          className="border px-2"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="proyecto"
-        />
-        <input
-          aria-label="cwd"
-          className="border px-2"
-          value={cwd}
-          onChange={(e) => setCwd(e.target.value)}
-          placeholder="C:/ruta"
-        />
-        <button className="border px-2" onClick={addProject}>
-          añadir
-        </button>
-      </div>
-      <select
-        id="project-selector"
-        className="border mt-4 w-full"
-        value={projectId}
-        onChange={(e) => setProjectId(e.target.value)}
-      >
-        <option value="">— proyecto —</option>
-        {projects.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.name}
-          </option>
-        ))}
-      </select>
-      <ul id="session-list" className="mt-2">
-        {sessions.map((s) => (
-          <li key={s.id}>
-            {s.title} ({s.id})
-          </li>
-        ))}
-      </ul>
+      <section>
+        <div className="flex gap-2">
+          <input
+            aria-label="nombre"
+            className="border px-2"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="proyecto"
+          />
+          <input
+            aria-label="cwd"
+            className="border px-2"
+            value={cwd}
+            onChange={(e) => setCwd(e.target.value)}
+            placeholder="C:/ruta"
+          />
+          <button className="border px-2" onClick={addProject}>
+            añadir
+          </button>
+        </div>
+        <select
+          id="project-selector"
+          className="border mt-2 w-full"
+          value={projectId}
+          onChange={(e) => setProjectId(e.target.value)}
+        >
+          <option value="">— proyecto —</option>
+          {projects.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <select
+          id="session-selector"
+          className="border mt-2 w-full"
+          value={sessionId}
+          onChange={(e) => setSessionId(e.target.value)}
+        >
+          <option value="">— sesión —</option>
+          {sessions.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.title} ({s.id})
+            </option>
+          ))}
+        </select>
+        <ul id="session-list" className="mt-2 text-sm">
+          {sessions.map((s) => (
+            <li key={s.id}>
+              {s.title} ({s.id})
+            </li>
+          ))}
+        </ul>
+      </section>
+      <Chat sessionId={sessionId} />
+      <Tokens projectId={projectId} />
     </main>
   )
 }
