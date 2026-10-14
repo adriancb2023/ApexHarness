@@ -87,7 +87,6 @@ def create_app(gateway_fake: bool = True, store=None, db_path: str | None = None
     app = FastAPI()
     if store is None:
         store = SqliteStore(db_path) if db_path else MemoryStore()
-    cards: dict[str, dict] = {}
 
     from qdrant_client import QdrantClient
     from qdrant_client.models import Distance, PointStruct, VectorParams
@@ -96,15 +95,13 @@ def create_app(gateway_fake: bool = True, store=None, db_path: str | None = None
     qc.recreate_collection("engrams", vectors_config=VectorParams(size=64, distance=Distance.COSINE))
     engram_seq: dict[str, int] = {}
     engram_counter = [0]
-    debates: dict[str, dict] = {}
     MAX_TURNS = 5
-    locks: dict[str, dict] = {}
 
     def _other(who: str) -> str:
         return "frontend" if who == "backend" else "backend"
 
     def _card_view(card: dict) -> dict:
-        done = {c["id"] for c in cards.values() if c["status"] == "listo"}
+        done = {c["id"] for c in store.list_cards(card["project_id"]) if c["status"] == "listo"}
         return {**card, "blocked": any(d not in done for d in card["depends_on"])}
 
     @app.get("/health")
@@ -175,7 +172,7 @@ def create_app(gateway_fake: bool = True, store=None, db_path: str | None = None
     @app.post("/api/cards")
     def create_card(body: CardIn):
         cid = str(uuid.uuid4())[:8]
-        cards[cid] = {
+        card = {
             "id": cid,
             "project_id": body.project_id,
             "title": body.title,
@@ -184,22 +181,23 @@ def create_app(gateway_fake: bool = True, store=None, db_path: str | None = None
             "depends_on": body.depends_on,
             "status": "backlog",
         }
-        return _card_view(cards[cid])
+        store.save_card(card)
+        return _card_view(card)
 
     @app.get("/api/cards")
     def list_cards(project_id: str = ""):
-        return [_card_view(c) for c in cards.values() if c["project_id"] == project_id]
+        return [_card_view(c) for c in store.list_cards(project_id)]
 
     @app.patch("/api/cards/{cid}")
     def patch_card(cid: str, body: CardPatch):
-        if cid not in cards:
+        if store.get_card(cid) is None:
             raise HTTPException(404, "card not found")
-        cards[cid]["status"] = body.status
-        return _card_view(cards[cid])
+        store.set_card_status(cid, body.status)
+        return _card_view(store.get_card(cid))
 
     @app.post("/api/engrams")
     def consolidate_engram(body: EngramIn):
-        card = cards.get(body.card_id)
+        card = store.get_card(body.card_id)
         if card is None:
             raise HTTPException(404, "card not found")
         if card["status"] != "listo":
@@ -236,7 +234,7 @@ def create_app(gateway_fake: bool = True, store=None, db_path: str | None = None
     @app.post("/api/debates")
     def create_debate(body: DebateIn):
         did = str(uuid.uuid4())[:8]
-        debates[did] = {
+        debate = {
             "id": did,
             "project_id": body.project_id,
             "backend_session_id": body.backend_session_id,
@@ -246,31 +244,35 @@ def create_app(gateway_fake: bool = True, store=None, db_path: str | None = None
             "turn_count": 0,
             "status": "open",
         }
-        return debates[did]
+        store.save_debate(debate)
+        return debate
 
     @app.get("/api/debates/{did}")
     def get_debate(did: str):
-        if did not in debates:
+        d = store.get_debate(did)
+        if d is None:
             raise HTTPException(404, "debate not found")
-        return debates[did]
+        return d
 
     @app.post("/api/debates/{did}/propose")
     def propose(did: str, body: ProposeIn):
-        d = debates.get(did)
+        d = store.get_debate(did)
         if d is None:
             raise HTTPException(404, "debate not found")
         if d["status"] == "needs_intervention" or d["turn_count"] >= MAX_TURNS:
             d["status"] = "needs_intervention"
+            store.save_debate(d)
             raise HTTPException(409, "cap de turnos: intervención requerida")
         if d["pending"] is not None:
             raise HTTPException(409, "ya hay propuesta pendiente")
         d["pending"] = {"from": body.from_, "content": body.content}
         d["status"] = "waiting_approval"
+        store.save_debate(d)
         return d
 
     @app.post("/api/debates/{did}/approve")
     def approve(did: str, body: ApproveIn):
-        d = debates.get(did)
+        d = store.get_debate(did)
         if d is None:
             raise HTTPException(404, "debate not found")
         if d["pending"] is None:
@@ -284,28 +286,30 @@ def create_app(gateway_fake: bool = True, store=None, db_path: str | None = None
         else:
             d["pending"] = None
             d["status"] = "done"
+        store.save_debate(d)
         return d
 
     @app.post("/api/locks")
     def acquire_lock(body: LockIn):
-        cur = locks.get(body.path)
+        cur = store.get_lock(body.path)
         if cur is not None and cur["locked_by"] != body.locked_by:
             return JSONResponse(status_code=409, content={**cur, "error": "locked"})
-        locks[body.path] = {"path": body.path, "locked_by": body.locked_by}
-        return locks[body.path]
+        lock = {"path": body.path, "locked_by": body.locked_by}
+        store.save_lock(lock)
+        return lock
 
     @app.get("/api/locks")
     def list_locks():
-        return list(locks.values())
+        return store.list_locks()
 
     @app.delete("/api/locks")
     def release_lock(path: str = "", locked_by: str = ""):
-        cur = locks.get(path)
+        cur = store.get_lock(path)
         if cur is None:
             raise HTTPException(404, "lock not found")
         if cur["locked_by"] != locked_by:
             return JSONResponse(status_code=409, content={**cur, "error": "locked"})
-        del locks[path]
+        store.delete_lock(path)
         return {"released": path}
 
     @app.websocket("/ws/sessions/{sid}")
