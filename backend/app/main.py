@@ -94,6 +94,7 @@ def create_app(
         store = SqliteStore(db_path) if db_path else MemoryStore()
     if gateway is None:
         gateway = FakeGateway()
+    fake = FakeGateway()
 
     from qdrant_client import QdrantClient
     from qdrant_client.models import Distance, PointStruct, VectorParams
@@ -150,10 +151,24 @@ def create_app(
         session = store.get_session(sid)
         if session is None:
             raise HTTPException(404, "session not found")
-        # gateway_fake: eco determinista en vez de `opencode serve`
-        result = gateway.send(body.content)
-        reply, toks = result["reply"], result["tokens"]
-        tok_u, tok_a = result["tokens_user"], result["tokens_reply"]
+        link = session.get("opencode_session_id")
+        if link and hasattr(gateway, "prompt"):
+            from app.gateway import bridge_prompt, estimate_tokens
+
+            now = time.time()
+            gateway.prompt(link, body.content)
+            store.append_message(sid, {"role": "user", "content": body.content,
+                                       "tokens": estimate_tokens(body.content), "ts": now,
+                                       "feature": body.feature})
+            drops = []
+            result = bridge_prompt(gateway, link, drops.append, since=now)
+            reply, toks = result["text"], result["tokens"]
+            tok_u, tok_a = estimate_tokens(body.content), toks
+        else:
+            # sin vínculo real: eco local aunque el gateway global sea Serve
+            result = fake.send(body.content)
+            reply, toks = result["reply"], result["tokens"]
+            tok_u, tok_a = result["tokens_user"], result["tokens_reply"]
         now = time.time()
         store.append_message(sid, {"role": "user", "content": body.content, "tokens": tok_u, "ts": now, "feature": body.feature})
         store.append_message(sid, {"role": "assistant", "content": reply, "tokens": tok_a, "ts": now, "feature": body.feature})
@@ -370,11 +385,11 @@ def create_app(
                                            "tokens": result["tokens"], "ts": time.time(), "feature": ""})
                 store.add_session_tokens(sid, estimate_tokens(content) + result["tokens"])
                 continue
-            result = gateway.send(content)
+            result = fake.send(content)
             reply = result["reply"]
             toks = result["tokens"]
             now = time.time()
-            for chunk in gateway.deltas(content):
+            for chunk in fake.deltas(content):
                 await ws.send_json({"delta": chunk})
             store.append_message(sid, {"role": "user", "content": content, "tokens": result["tokens_user"], "ts": now, "feature": ""})
             store.append_message(sid, {"role": "assistant", "content": reply, "tokens": result["tokens_reply"], "ts": now, "feature": ""})
