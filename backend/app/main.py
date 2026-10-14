@@ -9,6 +9,8 @@ from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.store import MemoryStore, SqliteStore
+
 
 class ProjectIn(BaseModel):
     name: str
@@ -81,10 +83,10 @@ def _fake_tokens(content: str) -> int:
     return max(1, len(content) // 4 + 1)
 
 
-def create_app(gateway_fake: bool = True) -> FastAPI:
+def create_app(gateway_fake: bool = True, store=None, db_path: str | None = None) -> FastAPI:
     app = FastAPI()
-    projects: dict[str, dict] = {}
-    sessions: dict[str, dict] = {}
+    if store is None:
+        store = SqliteStore(db_path) if db_path else MemoryStore()
     messages: dict[str, list] = {}
     cards: dict[str, dict] = {}
     feature_tokens: dict[str, dict[str, int]] = {}
@@ -114,31 +116,34 @@ def create_app(gateway_fake: bool = True) -> FastAPI:
     @app.post("/api/projects")
     def create_project(body: ProjectIn):
         pid = str(uuid.uuid4())[:8]
-        projects[pid] = {"id": pid, "name": body.name, "cwd": body.cwd}
-        return projects[pid]
+        project = {"id": pid, "name": body.name, "cwd": body.cwd}
+        store.save_project(project)
+        return project
 
     @app.post("/api/sessions")
     def create_session(body: SessionIn):
-        proj = projects.get(body.project_id)
+        proj = store.get_project(body.project_id)
         if proj is None:
             raise HTTPException(404, "project not found")
         sid = str(uuid.uuid4())[:8]
         # gateway_fake: no llama a `opencode serve`, solo registra cwd aislado
-        sessions[sid] = {
+        session = {
             "id": sid,
             "project_id": body.project_id,
             "title": body.title,
             "cwd": proj["cwd"],
         }
-        return sessions[sid]
+        store.save_session(session)
+        return session
 
     @app.get("/api/sessions")
     def list_sessions(project_id: str = ""):
-        return [s for s in sessions.values() if s["project_id"] == project_id]
+        return store.list_sessions(project_id)
 
     @app.post("/api/sessions/{sid}/messages")
     def post_message(sid: str, body: MessageIn):
-        if sid not in sessions:
+        session = store.get_session(sid)
+        if session is None:
             raise HTTPException(404, "session not found")
         # gateway_fake: eco determinista en vez de `opencode serve`
         reply = f"eco: {body.content}"
@@ -152,26 +157,22 @@ def create_app(gateway_fake: bool = True) -> FastAPI:
         messages[sid].append(
             {"role": "assistant", "content": reply, "tokens": tok_a, "ts": now, "feature": body.feature}
         )
-        sessions[sid]["tokens"] = sessions[sid].get("tokens", 0) + toks
+        store.add_session_tokens(sid, toks)
         if body.feature:
-            pid = sessions[sid]["project_id"]
+            pid = session["project_id"]
             feature_tokens.setdefault(pid, {}).setdefault(body.feature, 0)
             feature_tokens[pid][body.feature] += toks
         return {"reply": reply, "tokens": toks, "status": "done"}
 
     @app.get("/api/sessions/{sid}/messages")
     def get_messages(sid: str):
-        if sid not in sessions:
+        if store.get_session(sid) is None:
             raise HTTPException(404, "session not found")
         return messages.get(sid, [])
 
     @app.get("/api/tokens/summary")
     def tokens_summary(project_id: str = ""):
-        by_session = {
-            s["id"]: s.get("tokens", 0)
-            for s in sessions.values()
-            if s["project_id"] == project_id
-        }
+        by_session = {s["id"]: s.get("tokens", 0) for s in store.list_sessions(project_id)}
         return {
             "project_id": project_id,
             "total_tokens": sum(by_session.values()),
@@ -318,7 +319,7 @@ def create_app(gateway_fake: bool = True) -> FastAPI:
     @app.websocket("/ws/sessions/{sid}")
     async def chat_ws(ws: WebSocket, sid: str):
         await ws.accept()
-        if sid not in sessions:
+        if store.get_session(sid) is None:
             await ws.send_json({"error": "session not found"})
             await ws.close()
             return
@@ -339,7 +340,7 @@ def create_app(gateway_fake: bool = True) -> FastAPI:
             messages[sid].append(
                 {"role": "assistant", "content": reply, "tokens": _fake_tokens(reply), "ts": now, "feature": ""}
             )
-            sessions[sid]["tokens"] = sessions[sid].get("tokens", 0) + toks
+            store.add_session_tokens(sid, toks)
             await ws.send_json({"done": True, "tokens": toks, "status": "done"})
 
     @app.get("/")
