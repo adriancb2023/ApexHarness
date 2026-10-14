@@ -16,6 +16,8 @@ class MemoryStore:
         self._cards: dict[str, dict] = {}
         self._debates: dict[str, dict] = {}
         self._locks: dict[str, dict] = {}
+        self._engram_seq: dict[str, int] = {}
+        self._engram_counter: int = 0
 
     def save_project(self, project: dict) -> None:
         self._projects[project["id"]] = dict(project)
@@ -87,6 +89,18 @@ class MemoryStore:
     def list_locks(self) -> list[dict]:
         return [dict(l) for l in self._locks.values()]
 
+    def load_engram_map(self) -> dict[str, int]:
+        return dict(self._engram_seq)
+
+    def save_engram_seq(self, card_id: str, seq: int) -> None:
+        self._engram_seq[card_id] = seq
+
+    def load_engram_counter(self) -> int:
+        return self._engram_counter
+
+    def save_engram_counter(self, n: int) -> None:
+        self._engram_counter = n
+
 
 class SqliteStore:
     def __init__(self, path: str):
@@ -120,6 +134,7 @@ class SqliteStore:
             " turn_count INTEGER DEFAULT 0, status TEXT)"
         )
         self._db.execute("CREATE TABLE IF NOT EXISTS locks (path TEXT PRIMARY KEY, locked_by TEXT)")
+        self._db.execute("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, val INTEGER DEFAULT 0)")
         self._db.commit()
 
     def save_project(self, project: dict) -> None:
@@ -310,3 +325,29 @@ class SqliteStore:
             {"path": r[0], "locked_by": r[1]}
             for r in self._db.execute("SELECT path, locked_by FROM locks").fetchall()
         ]
+
+    def load_engram_map(self) -> dict[str, int]:
+        return {
+            r[0][4:]: r[1]
+            for r in self._db.execute("SELECT key, val FROM meta WHERE key LIKE 'seq:%'").fetchall()
+        }
+
+    def save_engram_seq(self, card_id: str, seq: int) -> None:
+        self._db.execute(
+            "INSERT INTO meta (key, val) VALUES (?, ?)"
+            " ON CONFLICT (key) DO UPDATE SET val = ?",
+            (f"seq:{card_id}", seq, seq),
+        )
+        self._db.commit()
+
+    def load_engram_counter(self) -> int:
+        row = self._db.execute("SELECT val FROM meta WHERE key = 'counter'").fetchone()
+        return row[0] if row else 0
+
+    def save_engram_counter(self, n: int) -> None:
+        self._db.execute(
+            "INSERT INTO meta (key, val) VALUES ('counter', ?)"
+            " ON CONFLICT (key) DO UPDATE SET val = ?",
+            (n, n),
+        )
+        self._db.commit()

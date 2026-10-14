@@ -57,3 +57,23 @@ def test_kanban_debate_locks_sobreviven_a_reinicio(tmp_path):
     assert det["turn_count"] == 1
     assert det["turns"][0]["content"] == "v1"
     assert c2.get("/api/locks").json()[0]["locked_by"] == "backend"
+
+
+def test_engrams_sobreviven_a_reinicio(tmp_path):
+    db = str(tmp_path / "harness.db")
+    qp = str(tmp_path / "qdrant")
+
+    app1 = create_app(gateway_fake=True, db_path=db, qdrant_path=qp)
+    c1 = TestClient(app1)
+    p = c1.post("/api/projects", json={"name": "A", "cwd": "C:/tmp/A"}).json()
+    a = c1.post("/api/cards", json={"project_id": p["id"], "title": "Auth JWT"}).json()
+    c1.patch(f"/api/cards/{a['id']}", json={"status": "listo"})
+    c1.post(
+        "/api/engrams",
+        json={"card_id": a["id"], "problema": "JWT expira", "solucion": "refresh rotativo"},
+    )
+    app1.state.qc.close()
+
+    c2 = TestClient(create_app(gateway_fake=True, db_path=db, qdrant_path=qp))
+    res = c2.get("/api/engrams/search", params={"q": "refresh JWT"}).json()
+    assert res[0]["card_id"] == a["id"]

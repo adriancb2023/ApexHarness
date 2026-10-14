@@ -83,7 +83,12 @@ def _fake_tokens(content: str) -> int:
     return max(1, len(content) // 4 + 1)
 
 
-def create_app(gateway_fake: bool = True, store=None, db_path: str | None = None) -> FastAPI:
+def create_app(
+    gateway_fake: bool = True,
+    store=None,
+    db_path: str | None = None,
+    qdrant_path: str | None = None,
+) -> FastAPI:
     app = FastAPI()
     if store is None:
         store = SqliteStore(db_path) if db_path else MemoryStore()
@@ -91,10 +96,12 @@ def create_app(gateway_fake: bool = True, store=None, db_path: str | None = None
     from qdrant_client import QdrantClient
     from qdrant_client.models import Distance, PointStruct, VectorParams
 
-    qc = QdrantClient(":memory:")
-    qc.recreate_collection("engrams", vectors_config=VectorParams(size=64, distance=Distance.COSINE))
-    engram_seq: dict[str, int] = {}
-    engram_counter = [0]
+    qc = QdrantClient(path=qdrant_path) if qdrant_path else QdrantClient(":memory:")
+    app.state.qc = qc
+    if not qc.collection_exists("engrams"):
+        qc.create_collection("engrams", vectors_config=VectorParams(size=64, distance=Distance.COSINE))
+    engram_seq: dict[str, int] = store.load_engram_map()
+    engram_counter = [store.load_engram_counter()]
     MAX_TURNS = 5
 
     def _other(who: str) -> str:
@@ -205,6 +212,8 @@ def create_app(gateway_fake: bool = True, store=None, db_path: str | None = None
         if body.card_id not in engram_seq:
             engram_counter[0] += 1
             engram_seq[body.card_id] = engram_counter[0]
+            store.save_engram_seq(body.card_id, engram_seq[body.card_id])
+            store.save_engram_counter(engram_counter[0])
         qc.upsert(
             collection_name="engrams",
             points=[
