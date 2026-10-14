@@ -1,3 +1,4 @@
+import hashlib
 import time
 import uuid
 from pathlib import Path
@@ -36,6 +37,25 @@ class CardPatch(BaseModel):
     status: Literal["backlog", "progreso", "pruebas", "listo"]
 
 
+class EngramIn(BaseModel):
+    card_id: str
+    problema: str
+    solucion: str = ""
+    archivos: list[str] = []
+    lecciones: str = ""
+
+
+def _embed(text: str, dim: int = 64) -> list[float]:
+    import re
+
+    vec = [0.0] * dim
+    for w in re.findall(r"[a-z0-9]+", text.lower()):
+        idx = int(hashlib.md5(w.encode()).hexdigest(), 16) % dim
+        vec[idx] += 1.0
+    norm = sum(v * v for v in vec) ** 0.5
+    return [v / norm for v in vec] if norm else vec
+
+
 def _fake_tokens(content: str) -> int:
     return max(1, len(content) // 4 + 1)
 
@@ -47,6 +67,14 @@ def create_app(gateway_fake: bool = True) -> FastAPI:
     messages: dict[str, list] = {}
     cards: dict[str, dict] = {}
     feature_tokens: dict[str, dict[str, int]] = {}
+
+    from qdrant_client import QdrantClient
+    from qdrant_client.models import Distance, PointStruct, VectorParams
+
+    qc = QdrantClient(":memory:")
+    qc.recreate_collection("engrams", vectors_config=VectorParams(size=64, distance=Distance.COSINE))
+    engram_seq: dict[str, int] = {}
+    engram_counter = [0]
 
     def _card_view(card: dict) -> dict:
         done = {c["id"] for c in cards.values() if c["status"] == "listo"}
@@ -148,6 +176,42 @@ def create_app(gateway_fake: bool = True) -> FastAPI:
             raise HTTPException(404, "card not found")
         cards[cid]["status"] = body.status
         return _card_view(cards[cid])
+
+    @app.post("/api/engrams")
+    def consolidate_engram(body: EngramIn):
+        card = cards.get(body.card_id)
+        if card is None:
+            raise HTTPException(404, "card not found")
+        if card["status"] != "listo":
+            raise HTTPException(409, "solo se consolida en Done")
+        if body.card_id not in engram_seq:
+            engram_counter[0] += 1
+            engram_seq[body.card_id] = engram_counter[0]
+        qc.upsert(
+            collection_name="engrams",
+            points=[
+                PointStruct(
+                    id=engram_seq[body.card_id],
+                    vector=_embed(f"{body.problema} {body.solucion} {body.lecciones}"),
+                    payload={
+                        "card_id": body.card_id,
+                        "problema": body.problema,
+                        "solucion": body.solucion,
+                        "archivos": body.archivos,
+                        "lecciones": body.lecciones,
+                    },
+                )
+            ],
+        )
+        return {"ok": True, "card_id": body.card_id}
+
+    @app.get("/api/engrams/search")
+    def search_engrams(q: str = "", limit: int = 5):
+        res = qc.query_points(collection_name="engrams", query=_embed(q), limit=limit)
+        return [
+            {"card_id": h.payload["card_id"], "score": h.score, **h.payload}
+            for h in res.points
+        ]
 
     @app.websocket("/ws/sessions/{sid}")
     async def chat_ws(ws: WebSocket, sid: str):
