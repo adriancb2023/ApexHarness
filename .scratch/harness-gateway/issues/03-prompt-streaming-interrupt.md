@@ -9,8 +9,8 @@
 - [x] send_prompt a sesión vinculada con respuesta persistida
 - [x] Puente SSE→WS con protocolo delta/done actual
 - [x] Interrupt con botón en GUI
-- [ ] Vivo manual: prompt + streaming + interrupt en sesión de prueba (PENDIENTE APROBACIÓN GASTO)
+- [x] Vivo manual: prompt + streaming + interrupt en sesión de prueba
 
 ## Comments
 
-Implementado (prompt/interrupt/messages/bridge + rama real en WS + botón, 7 tests nuevos). Interrupt verificado en vivo (`False` en idle, sin gasto). Polling de `message` en vez de parsear SSE a ciegas. Pendiente: 1 prompt vivo de validación.
+Validación viva 2026-10-14 en `ses_ed0b1f27` (vacía): prompt aceptado (inbox), agente respondió en ~1s, gasto 9247 in + 11 out + 20 reasoning, cost 0. Hallazgos aplicados: el bridge tomaba assistants[-1] por posición y tragó un assistant viejo → filtro `since` + orden por `created`; los inbox van a INBOX y drenan solo con runner activo; existe mensaje `idle`; `message` pagina por cursor.

@@ -35,11 +35,11 @@ def test_interrupt_returns_flag():
 
 def test_bridge_streams_new_text_then_done():
     polls = iter([
-        [{"role": "user", "text": "hola", "done": True, "tokens": 2}],
-        [{"role": "user", "text": "hola", "done": True, "tokens": 2},
-         {"role": "assistant", "text": "eco: ho", "done": False, "tokens": 0}],
-        [{"role": "user", "text": "hola", "done": True, "tokens": 2},
-         {"role": "assistant", "text": "eco: hola", "done": True, "tokens": 9}],
+        [{"role": "user", "text": "hola", "done": True, "tokens": 2, "created": 3}],
+        [{"role": "user", "text": "hola", "done": True, "tokens": 2, "created": 3},
+         {"role": "assistant", "text": "eco: ho", "done": False, "tokens": 0, "created": 4}],
+        [{"role": "user", "text": "hola", "done": True, "tokens": 2, "created": 3},
+         {"role": "assistant", "text": "eco: hola", "done": True, "tokens": 9, "created": 5}],
     ])
 
     class Stub:
@@ -52,3 +52,20 @@ def test_bridge_streams_new_text_then_done():
     assert sent[-1]["done"] is True
     assert sent[-1]["tokens"] == 9
     assert result["text"] == "eco: hola"
+
+
+def test_bridge_ignora_assistant_viejo_y_espera_respuesta():
+    polls = iter([
+        [{"role": "assistant", "text": "", "done": True, "tokens": 0, "created": 1}],
+        [{"role": "assistant", "text": "", "done": True, "tokens": 0, "created": 1}],
+        [{"role": "assistant", "text": "ok", "done": True, "tokens": 7, "created": 9}],
+    ])
+
+    class Stub:
+        def messages(self, sid):
+            return next(polls)
+
+    sent = []
+    result = bridge_prompt(Stub(), "ses_9", sent.append, sleep=lambda s: None, max_polls=10, since=5.0)
+    assert "".join(m["delta"] for m in sent if "delta" in m) == "ok"
+    assert result["tokens"] == 7

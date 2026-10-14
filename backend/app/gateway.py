@@ -48,9 +48,10 @@ class FakeGateway(OpencodeGateway):
 
 
 def _normalize_message(raw: dict) -> dict:
+    created = (raw.get("time") or {}).get("created", 0)
     kind = raw.get("type", "")
     if kind == "user":
-        return {"role": "user", "text": raw.get("text", ""), "done": True, "tokens": 0}
+        return {"role": "user", "text": raw.get("text", ""), "done": True, "tokens": 0, "created": created}
     if kind == "assistant":
         text = "".join(p.get("text", "") for p in raw.get("content", []) if p.get("type") == "text")
         toks = raw.get("tokens", {})
@@ -60,20 +61,25 @@ def _normalize_message(raw: dict) -> dict:
             "text": text,
             "done": done,
             "tokens": toks.get("input", 0) + toks.get("output", 0) + toks.get("reasoning", 0),
+            "created": created,
         }
-    return {"role": kind, "text": "", "done": True, "tokens": 0}
+    return {"role": kind, "text": "", "done": True, "tokens": 0, "created": created}
 
 
-def bridge_prompt(gateway, session_id: str, send, sleep=None, max_polls: int = 120) -> dict:
+def bridge_prompt(gateway, session_id: str, send, sleep=None, max_polls: int = 120, since: float = 0) -> dict:
     import time as _time
 
     rest = sleep or _time.sleep
     seen = ""
     last = {"text": "", "tokens": 0}
     for _ in range(max_polls):
-        assistants = [m for m in gateway.messages(session_id) if m["role"] == "assistant"]
-        if assistants:
-            current = assistants[-1]
+        fresh = sorted(
+            (m for m in gateway.messages(session_id)
+             if m["role"] == "assistant" and m.get("created", 0) > since),
+            key=lambda m: m.get("created", 0),
+        )
+        if fresh:
+            current = fresh[-1]
             if len(current["text"]) > len(seen):
                 send({"delta": current["text"][len(seen):]})
                 seen = current["text"]

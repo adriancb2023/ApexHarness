@@ -363,7 +363,7 @@ def create_app(
                     anyio.from_thread.run(ws.send_json, msg)
 
                 result = await anyio.to_thread.run_sync(
-                    partial(bridge_prompt, gateway, link, _send)
+                    partial(bridge_prompt, gateway, link, _send, None, 120, now)
                 )
                 store.append_message(sid, {"role": "assistant", "content": result["text"],
                                            "tokens": result["tokens"], "ts": time.time(), "feature": ""})

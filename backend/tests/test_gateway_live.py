@@ -6,16 +6,16 @@ from app.main import create_app
 class StubServe:
     def __init__(self):
         self.interrupted = []
-        self.polls = iter([
-            [{"role": "assistant", "text": "hola real", "done": True, "tokens": 30}],
-        ])
+        self.polls = [
+            [{"role": "assistant", "text": "hola real", "done": True, "tokens": 30, "created": 9999999999999}],
+        ]
 
     def prompt(self, session_id, text):
         assert session_id == "ses_9"
         return "msg_1"
 
     def messages(self, session_id):
-        return next(self.polls)
+        return self.polls[0]
 
     def linked_tokens(self, session_id):
         return None
