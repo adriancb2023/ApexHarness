@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.store import MemoryStore, SqliteStore
+from app.gateway import FakeGateway
 
 
 class ProjectIn(BaseModel):
@@ -79,10 +80,6 @@ def _embed(text: str, dim: int = 64) -> list[float]:
     return [v / norm for v in vec] if norm else vec
 
 
-def _fake_tokens(content: str) -> int:
-    return max(1, len(content) // 4 + 1)
-
-
 def create_app(
     gateway_fake: bool = True,
     store=None,
@@ -92,6 +89,7 @@ def create_app(
     app = FastAPI()
     if store is None:
         store = SqliteStore(db_path) if db_path else MemoryStore()
+    gateway = FakeGateway()
 
     from qdrant_client import QdrantClient
     from qdrant_client.models import Distance, PointStruct, VectorParams
@@ -148,10 +146,9 @@ def create_app(
         if session is None:
             raise HTTPException(404, "session not found")
         # gateway_fake: eco determinista en vez de `opencode serve`
-        reply = f"eco: {body.content}"
-        tok_u = _fake_tokens(body.content)
-        tok_a = _fake_tokens(reply)
-        toks = tok_u + tok_a
+        result = gateway.send(body.content)
+        reply, toks = result["reply"], result["tokens"]
+        tok_u, tok_a = result["tokens_user"], result["tokens_reply"]
         now = time.time()
         store.append_message(sid, {"role": "user", "content": body.content, "tokens": tok_u, "ts": now, "feature": body.feature})
         store.append_message(sid, {"role": "assistant", "content": reply, "tokens": tok_a, "ts": now, "feature": body.feature})
@@ -334,13 +331,14 @@ def create_app(
             except Exception:
                 break
             content = str(data.get("content", ""))
-            reply = f"eco: {content}"
-            toks = _fake_tokens(content) + _fake_tokens(reply)
+            result = gateway.send(content)
+            reply = result["reply"]
+            toks = result["tokens"]
             now = time.time()
-            await ws.send_json({"delta": "eco: "})
-            await ws.send_json({"delta": content})
-            store.append_message(sid, {"role": "user", "content": content, "tokens": _fake_tokens(content), "ts": now, "feature": ""})
-            store.append_message(sid, {"role": "assistant", "content": reply, "tokens": _fake_tokens(reply), "ts": now, "feature": ""})
+            for chunk in gateway.deltas(content):
+                await ws.send_json({"delta": chunk})
+            store.append_message(sid, {"role": "user", "content": content, "tokens": result["tokens_user"], "ts": now, "feature": ""})
+            store.append_message(sid, {"role": "assistant", "content": reply, "tokens": result["tokens_reply"], "ts": now, "feature": ""})
             store.add_session_tokens(sid, toks)
             await ws.send_json({"done": True, "tokens": toks, "status": "done"})
 
