@@ -1,0 +1,16 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "Apex_Harness",
+  "permissions": [
+    { "action": "shell", "resource": "git clean -d*", "effect": "ask" }
+  ],
+  "policies": [
+    { "action": "tool.use", "resource": "shell:rm -rf /*", "effect": "deny" },
+    { "action": "tool.use", "resource": "shell:rm -fr /*", "effect": "deny" },
+    { "action": "tool.use", "resource": "shell:Remove-Item*-Recurse*-Force*", "effect": "deny" },
+    { "action": "tool.use", "resource": "shell:Remove-Item*-Force*-Recurse*", "effect": "deny" },
+    { "action": "tool.use", "resource": "shell:git push --force*", "effect": "deny" },
+    { "action": "tool.use", "resource": "shell:git push -f*", "effect": "deny" },
+    { "action": "tool.use", "resource": "shell:git reset --hard*", "effect": "deny" }
+  ]
+}
