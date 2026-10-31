@@ -1,3 +1,13 @@
 # Artefactos runtime por tarea; sobrescribe entre tareas (no versionar salvo metrics)
 .harness/state.md
 .harness/cache.md
+
+# Skills for Real Engineers (mattpocock/skills): dependencia externa, no del harness.
+# Se instalan con el instalador oficial o scripts/bootstrap-matt-skills.ps1
+.cursor/skills/*
+!.cursor/skills/harness-core/
+!.cursor/skills/harness-core/**
+
+.opencode/skills/*
+!.opencode/skills/harness-core/
+!.opencode/skills/harness-core/**

@@ -1,0 +1,24 @@
+---
+description: Roles Apex en Cursor vía subagentes nativos .cursor/agents (apex-dev, apex-bug, apex-verifier).
+alwaysApply: true
+---
+
+# Roles Apex en Cursor
+
+Delega con los subagentes del proyecto (`.cursor/agents/`), no improvises roles:
+
+| Pipeline | Subagente | Notas |
+| --- | --- | --- |
+| DEV | `apex-dev` | Handoff §8; skills Matt (`tdd`, …) |
+| BUG | `apex-bug` | Siempre `diagnosing-bugs` primero |
+| VERIFY | `apex-verifier` | `readonly: true`; no debe editar |
+| Answer | (tú / `apex-harness`) | Sin spawn de implementación |
+| Protocolo completo | `apex-harness` o `/harness` | Orchestrator |
+
+## Reglas
+
+1. Handoff compacto (objetivo, contexto, memory IDs, criteria) — nunca la conversación entera.
+2. Si `apex-verifier` edita código → verificación FALLIDA → REPAIRING.
+3. Trivial: verify con salida del implementador. Estándar/compleja: `apex-verifier`.
+4. Máx 2 ciclos REPAIR → luego UNVERIFIED/BLOCKED.
+5. Solo el Orchestrator escribe Engram al cierre (§9).

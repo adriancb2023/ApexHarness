@@ -18,6 +18,7 @@ coordinación.
 | `.opencode/agents/Apex_Verifier.md` | Verificación independiente (subagente read-only). |
 | `.opencode/commands/harness.md` | `/harness <tarea>`: entrada explícita al protocolo completo. |
 | `.opencode/skills/harness-core/` | Registro + tablas de routing, memoria, estados, verificación y DoD. Única fuente; cárgala al empezar cualquier tarea. |
+| `.cursor/` | Port nativo Cursor: rules, `/harness`, shim `harness-core`, Engram MCP. Skills Matt se instalan aparte (gitignored). |
 | `opencode.json` | Políticas de permisos (referencia en `/docs/CAPABILITIES.md` y `policies/SAFETY.md`). |
 | `.harness/` | Artefactos por tarea: `state.md`, `cache.md`, `metrics.jsonl`. |
 | `docs/` | Hallazgos de capacidades, métricas, portabilidad a Cursor, metodologías. |
@@ -45,6 +46,10 @@ coordinación.
 ## Notas de entorno
 
 - `git` no está instalado en esta máquina: cualquier check `git diff/log` se marca
-  UNVERIFIED y se sustituye por tests/evidencia de archivo. Instalar git lo desbloquea.
+  UNVERIFIED y se sustituye por tests/evidencia de archivo. Instalar git lo desbloquea
+  (también el instalador `npx skills add mattpocock/skills`).
+- Skills Matt **no** se versionan: paso 2 de instalación (README / harness-core §12).
+  Viven en `.opencode/skills/*` y `.cursor/skills/*` (gitignored salvo `harness-core`).
+  Bootstrap: `scripts/bootstrap-matt-skills.ps1`.
 - `git` de este directorio conserva historial de un proyecto anterior distinto
   (harness externo runtime, descartado). No se toca.

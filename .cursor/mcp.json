@@ -1,0 +1,8 @@
+﻿{
+  "mcpServers": {
+    "engram": {
+      "command": "C:\\Users\\Harvie\\bin\\engram.exe",
+      "args": ["mcp", "--tools=agent"]
+    }
+  }
+}

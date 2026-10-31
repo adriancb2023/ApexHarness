@@ -1,9 +1,12 @@
 # Skill Registry — metadatos del harness
 
-Base de verificación real: `~/.config/opencode/skills/` (27 skills instaladas por el
-instalador oficial `npx skills add mattpocock/skills -a opencode`, set completo
-`engineering/` 20 + `productivity/` 7; comparado con el árbol del repo oficial el
-2026-10-25). Los IDs son los de directorio; cada uno vive como `skills/<id>/SKILL.md`.
+Base de verificación real: skills Matt instaladas **fuera del versionado** por el
+instalador oficial
+`npx skills@latest add mattpocock/skills -a opencode -a cursor -y --copy`
+(set `engineering/` 20 + `productivity/` 7). Destinos de proyecto:
+`<repo>/.opencode/skills/<id>/` y `<repo>/.cursor/skills/<id>/` (gitignored;
+`harness-core` sí versionado). Fallback: `scripts/bootstrap-matt-skills.ps1`.
+Sin ese paso 2 el routing de harness-core §5 no tiene a qué cargar.
 
 Convenciones:
 - **user-invoked** (`disable-model-invocation: true`): el modelo NO la ve anunciada;

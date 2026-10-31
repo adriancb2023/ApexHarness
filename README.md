@@ -3,9 +3,10 @@
 **Autor y propietario:** Adrián Cruz Barranco
 
 Capa de orquestación de **agentes, skills, memoria, contexto, verificación y
-políticas** que vive dentro de OpenCode y usa sus mecanismos nativos. Sin runtime
-externo, sin CLI, sin servicio: OpenCode sigue ejecutando todo; este repo aporta
-la coordinación.
+políticas** para **OpenCode** y **Cursor**. Sin runtime externo propio: el host
+ejecuta; este repo aporta la coordinación (`.opencode/` + `.cursor/`).
+
+**Dependencia externa (no incluida en el repo):** [Skills for Real Engineers](https://github.com/mattpocock/skills) (`mattpocock/skills`). El harness solo las **rutea** por ID.
 
 ```text
                     TAREA (texto o /harness)
@@ -54,10 +55,18 @@ la coordinación.
 | Políticas | `opencode.json` (`permissions[]` + `policies[]`) hard-deny de `git push --force`, `git reset --hard`, borrados destructivos; explicada en `policies/SAFETY.md` | enforcement del host |
 | Métricas | `.harness/metrics.jsonl` | A/B con/sin memoria → `docs/METRICS.md` |
 | Entrada explícita | `.opencode/commands/harness.md` → `/harness <tarea>` | comando con `agent: Apex_Harness` |
+| Cursor (nativo) | `.cursor/rules`, `.cursor/commands/harness.md`, shim `harness-core`, `mcp.json` | ver `docs/CURSOR.md` |
 
 ## Uso
 
-1. Abre este repo en OpenCode (v2). El agente por defecto de esta sesión es `Apex_Harness`.
+0. **Skills Matt (obligatorio, una vez por máquina/proyecto):** no vienen en el clone;
+   viven en `.opencode/skills/` y `.cursor/skills/` (gitignored salvo `harness-core`).
+   ```bash
+   npx skills@latest add mattpocock/skills -a opencode -a cursor -y --copy
+   ```
+   Requiere `git`. Sin git, con set global ya instalado:
+   `pwsh ./scripts/bootstrap-matt-skills.ps1 -FromOpenCodeGlobal` (ambos hosts).
+1. Abre este repo en OpenCode (v2) o Cursor. En OpenCode el default es `Apex_Harness`; en Cursor aplica la regla `apex-harness`.
 2. Habla normal o usa `/harness <tarea>`. Ejemplos:
 
    ```text
@@ -95,11 +104,26 @@ si algo es incorrecto, corregir las tablas de `harness-core` (no el agente).
 
 ## Instalación en otro repo (un solo harness garantizado)
 
-Copia: los 4 `Apex_*.md` → `.opencode/agents/`; `harness-core` →
-`.opencode/skills/`; el comando → `.opencode/commands/`; y en el `opencode.json`
-del destino **fusión** (merge, no reemplazo): `default_agent: "Apex_Harness"` +
-`policies[]` + `permission` ask de `git clean`. Procedimiento completo, resolución
-de conflictos y garantías del host: **harness-core §12**.
+**Paso 1 — harness (este repo):**
+
+- OpenCode: los 4 `Apex_*.md` → `.opencode/agents/`; `harness-core` →
+  `.opencode/skills/`; comando → `.opencode/commands/`; en `opencode.json`
+  **fusión** (merge): `default_agent: "Apex_Harness"` + `policies[]` + ask de
+  `git clean`.
+- Cursor: copia también `.cursor/` (rules, commands, `skills/harness-core`,
+  `mcp.json`). Detalle: **docs/CURSOR.md**.
+
+**Paso 2 — Skills for Real Engineers (obligatorio, no están en el repo):**
+
+```bash
+npx skills@latest add mattpocock/skills -a opencode -a cursor -y --copy
+# o, sin git:
+pwsh ./scripts/bootstrap-matt-skills.ps1 -FromOpenCodeGlobal
+```
+
+Quedan en el proyecto: `.opencode/skills/<id>/` y `.cursor/skills/<id>/` (no se
+versionan). Sin este paso el router apunta a IDs (`tdd`, `code-review`, …) que no
+existen. Procedimiento completo: **harness-core §12**.
 
 Por qué no se mezclan dos harnesses: (1) IDs namespaced (`Apex_*`, `harness-core`,
 `/harness`) — no colisionan con agentes/skills ajenos; (2) `default_agent` del
@@ -109,6 +133,7 @@ Apex_Dev/Apex_Bug/Apex_Verifier): un `apex` u otro agente global ni siquiera
 aparece en su catálogo de tareas; (4) `policies[]` hard-deny manda en cualquier
 capa. Si el repo destino tenía un harness viejo (agentes sin prefijo), desactívalo
 con `"agent": {"harness": {"disable": true}}` o borrando/renombrando sus ficheros.
+En Cursor: una sola pareja `apex-harness` + `apex-roles`; borra reglas rivales.
 
 ## Estructura
 
@@ -119,10 +144,17 @@ policies/SAFETY.md       explicación de las políticas y cómo endurecerlas
 .opencode/agents/*.md    Apex_Harness, Apex_Dev, Apex_Bug, Apex_Verifier
 .opencode/commands/      /harness
 .opencode/skills/harness-core/   SKILL.md (routing/memoria/estados/DoD) + references/registry.md
+.cursor/rules/           apex-harness.mdc + apex-roles.mdc (alwaysApply)
+.cursor/agents/          apex-harness, apex-dev, apex-bug, apex-verifier
+.cursor/commands/        /harness (Cursor)
+.cursor/skills/harness-core/  shim → canónico en .opencode/...
+.cursor/mcp.json         Engram local
+scripts/install-cursor-harness.ps1   instala/repara harness en Cursor
+scripts/bootstrap-matt-skills.ps1    fallback sin git → .opencode/skills + .cursor/skills
 .harness/                state.md, cache.md, metrics.jsonl (runtime, por tarea)
 docs/CAPABILITIES.md     qué se inspeccionó de OpenCode/skills/Engram y qué limita
 docs/METRICS.md          protocolo de medición y A/B de Engram
-docs/CURSOR.md           portabilidad (propuesta, por verificar)
+docs/CURSOR.md           port Cursor (implementado) + paso skills Matt
 ```
 
 ## Estado del MVP y roadmap
@@ -139,7 +171,8 @@ por agente, tracker local para las skills con `requires/issues`.
 ## Limitaciones de entorno conocidas (ver docs/CAPABILITIES.md)
 
 - `git` NO está instalado: checks `git diff/log` salen UNVERIFIED y `pr` se
-  descarta. Desbloqueo: `winget install Git.Git` (también reactiva el instalador
-  oficial de skills).
-- Cursor no está instalado; el port es propuesta no implementada.
+  descarta; el instalador oficial de skills falla (`spawn git ENOENT`).
+  Desbloqueo: `winget install Git.Git`. Fallback skills (ambos hosts):
+  `scripts/bootstrap-matt-skills.ps1 -FromOpenCodeGlobal`.
+- Port Cursor: implementado en `.cursor/` (ver `docs/CURSOR.md`).
 - Tokens por fase no automatizados en el MVP (se capturan del TUI).

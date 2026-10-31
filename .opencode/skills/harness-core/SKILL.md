@@ -211,7 +211,9 @@ del JSONL. Protocolo completo: `docs/METRICS.md`.
 ## 12. Aislamiento e instalación: solo un harness manda
 
 En cualquier repo con este harness instalado, el único pipeline activo es el de
-`Apex_*`. Instalación (config-only, todo se puede copiar a mano):
+`Apex_*`. Instalación en **dos pasos**:
+
+### Paso 1 — harness (config-only; se copia a mano o se clona)
 
 | Pieza | Destino (por defecto: proyecto) | Conflicto con harness/agentes previos |
 | --- | --- | --- |
@@ -220,6 +222,23 @@ En cualquier repo con este harness instalado, el único pipeline activo es el de
 | comando `/harness` | `<repo>/.opencode/commands/harness.md` | Si existía otro comando con ese ID, lo reemplaza (mismo path) |
 | `opencode.json` | `<repo>/opencode.json` — MERGE, no sustituir | Añade `default_agent: "Apex_Harness"`, `policies[]` hard-deny y `permission: {"git clean -d*": "ask"}`; conserva lo demás del repo |
 | reglas | Si el repo ya tiene `AGENTS.md`: añade un bloque `## Harness (Apex_)` al final (no lo sustituyas). Alternativa sin tocar AGENTS.md: en `opencode.json`, `instructions: [".opencode/skills/harness-core/SKILL.md"]` |
+| Cursor | `<repo>/.cursor/` (rules `apex-*`, commands/harness, skills/harness-core shim, mcp.json) | Una sola pareja always-apply del harness; borra reglas de un harness anterior. Detalle: `docs/CURSOR.md` |
+
+### Paso 2 — Skills for Real Engineers (obligatorio; NO van en este repo)
+
+```bash
+npx skills@latest add mattpocock/skills -a opencode -a cursor -y --copy
+# sin git (copia desde ~/.config/opencode/skills):
+pwsh ./scripts/bootstrap-matt-skills.ps1 -FromOpenCodeGlobal
+```
+
+Instala las ~27 skills (`tdd`, `code-review`, `diagnosing-bugs`, …) en el
+**proyecto**: `<repo>/.opencode/skills/` y `<repo>/.cursor/skills/` (también puede
+quedar copia global en `~/.config/opencode/skills/`). Sin este paso el router de
+§5 apunta a IDs inexistentes. Requiere `git` para el instalador oficial. No
+versionar las skills Matt en git (ver `.gitignore`; solo se versiona
+`harness-core`).
+
 
 Garantías duras (aplicadas por el HOST, no por prompts):
 
@@ -239,6 +258,5 @@ Instalación global (todos los repos): mismo contenido en `~/.config/opencode/`
 (agents/skills/commands) y `default_agent` + `policies[]` en el config global.
 Un proyecto que defina su propio `default_agent` pisará el global (decisión
 consciente, nuestra config se respeta en el resto de keys). Los 27 skills de
-Matt son el SUELO compartido (globales, sin duplicar: los 2 harness los usan hijo
-de lo mismo); lo namespaced no se mezcla. Cursor: ver docs/CURSOR.md (reglas
-namespaced; borra las reglas de un harness anterior para evitar dos salidas al mismo paso).
+Matt son el SUELO compartido (paso 2; no se duplican dentro del harness
+namespaced). Cursor: `docs/CURSOR.md`.

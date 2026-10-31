@@ -31,21 +31,21 @@ repositorio oficial / docs V2.
 
 ## Skills de Matt Pocock
 
-- Instaladas en `~/.config/opencode/skills/` (27): ask-matt, code-review,
-  codebase-design, diagnosing-bugs, domain-modeling, grill-me, grill-with-docs,
-  grilling, handoff, implement, implement-spec, improve-codebase-architecture, pr,
-  prototype, research, retro, setup-matt-pocock-skills, tdd, teach,
-  to-questionnaire, to-spec, to-tickets, triage, wait-what, wayfinder, wizard,
-  writing-for-agents.
-- **Verificación contra el repo oficial** (api.github.com, árbol `main`,
-  2026-10-25): el set instalado coincide exactamente con `skills/engineering/`
-  (20) + `skills/productivity/` (7). Existen además en el repo `skills/misc/`,
-  `skills/in-progress/` y `skills/deprecated/` que el instalador no trae.
-- **Re-instalación hoy:** `npx skills@latest add mattpocock/skills -a opencode`
-  falla en esta máquina con `spawn git ENOENT` (el instalador clona con git y
-  **git no está instalado**). El set en disco está completo y es reciente
-  (2026-10-09), por lo que no es bloqueante; para actualizar: instalar git y
-  relanzar el instalador.
+- **No forman parte del repo ApexHarness.** Son el paso 2 de instalación
+  (harness-core §12 / README). El harness solo las rutea por ID.
+- Destinos tras instalar (proyecto; gitignored salvo `harness-core`):
+  - OpenCode: `<repo>/.opencode/skills/<id>/` (+ opcional global `~/.config/opencode/skills/`)
+  - Cursor: `<repo>/.cursor/skills/<id>/`
+- Comando canónico:
+  `npx skills@latest add mattpocock/skills -a opencode -a cursor -y --copy`
+- Set esperado (27): ask-matt, code-review, codebase-design, diagnosing-bugs,
+  domain-modeling, grill-me, grill-with-docs, grilling, handoff, implement,
+  implement-spec, improve-codebase-architecture, pr, prototype, research, retro,
+  setup-matt-pocock-skills, tdd, teach, to-questionnaire, to-spec, to-tickets,
+  triage, wait-what, wayfinder, wizard, writing-for-agents.
+- **En esta máquina:** set en proyecto (`.opencode/skills` + `.cursor/skills`) y
+  global (2026-10-09). Re-instalación oficial falla sin `git`. Fallback:
+  `pwsh ./scripts/bootstrap-matt-skills.ps1 -FromOpenCodeGlobal`.
 - Deps de tracker: implement, implement-spec, to-spec, to-tickets, triage y
   wayfinder asumen un issue tracker configurado (`setup-matt-pocock-skills`;
   variantes GitHub/GitLab/local). Sin git instalado, la ruta útil es la local.
@@ -78,8 +78,9 @@ Detalles que condicionan el diseño:
    Consecuencias: `git diff/log/build gates` → UNVERIFIED; `pr`, `triage` con
    tracker remoto → degradados; proyecto Engram se llama `apexharness` por
    basename. Recomendación: `winget install Git.Git` y relanzar el instalador.
-2. **Cursor no instalado** en esta máquina (`~/.cursor` inexistente). Puerta de
-   portabilidad y mapeo propuesta: `docs/CURSOR.md`. No se implementó el adapter.
+2. **Cursor:** port en `.cursor/` implementado (`docs/CURSOR.md`). Engram vía
+   `.cursor/mcp.json` → `engram mcp --tools=agent` (binario local; distinto del
+   cloud `mcp.engram.page`).
 3. **Tokens**: OpenCode no expone al agente un contador de tokens de su propio
    turno. Las métricas de tokens se capturan del panel del TUI
    (`tokensTui`) o vía API de sesiones; automatización completa vía plugin → roadmap.
