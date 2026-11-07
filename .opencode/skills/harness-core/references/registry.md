@@ -181,6 +181,12 @@ writing-for-agents:
   type: model-invoked
   purpose: write docs for agents (skills, AGENTS.md)
   load-when: you MAINTAIN the harness itself (editing the repo's skills/agents)
+security-audit-core:
+  type: model-invoked
+  purpose: Security Audit Squad protocol (DEEP AppSec, SEC-* JSON, defensive fixes only)
+  load-when: AppSec audit, SEC-* finding, or Apex_SecurityFixer patch
+  agents: [Apex_InjectionAuditor, Apex_AuthAuditor, Apex_SecApiAuditor, Apex_SecretsAuditor, Apex_SecurityFixer]
+  notes: canonical at .agents/skills/security-audit-core/; Cursor/OpenCode shims point there; no exploits/PoCs
 ask-matt:
   type: user-invoked
   purpose: meta router over the skills repository
@@ -230,6 +236,26 @@ Apex_MemoryFixer:
   use: recommendation is the seam; red before the minimal patch
   avoids: [diagnosing-bugs, code-review]
   stack: the skills of the technology the finding names
+Apex_InjectionAuditor:
+  core: [security-audit-core]
+  use: DEEP static AppSec; close = JSON; no edit; no exploits
+  domain: [SEC-INJ]
+Apex_AuthAuditor:
+  core: [security-audit-core]
+  use: DEEP static AppSec; close = JSON; no edit; no exploits
+  domain: [SEC-AUTH]
+Apex_SecApiAuditor:
+  core: [security-audit-core]
+  use: DEEP static AppSec; close = JSON; no edit; no exploits
+  domain: [SEC-API]
+Apex_SecretsAuditor:
+  core: [security-audit-core]
+  use: DEEP static AppSec; close = JSON; no edit; no exploits
+  domain: [SEC-SEC]
+Apex_SecurityFixer:
+  core: [security-audit-core, tdd]
+  use: recommendation is the seam; defensive test then minimal secure patch
+  avoids: [diagnosing-bugs, code-review, exploits/PoCs]
 ```
 
 ## 6. OpenCode agents of the harness (`.opencode/agents/`)
@@ -245,6 +271,11 @@ Apex_MemoryFixer:
 | `Apex_SqlAuditor` | subagent | edit denied | SQL and ORM memory; JSON close |
 | `Apex_WorkerAuditor` | subagent | edit denied | worker and queue memory; JSON close |
 | `Apex_MemoryFixer` | subagent | writes the named patch | applies one MEM-* recommendation |
+| `Apex_InjectionAuditor` | subagent | edit denied | AppSec injection patterns; SEC-INJ JSON close |
+| `Apex_AuthAuditor` | subagent | edit denied | AppSec authn/authz; SEC-AUTH JSON close |
+| `Apex_SecApiAuditor` | subagent | edit denied | API AppSec; SEC-API JSON close |
+| `Apex_SecretsAuditor` | subagent | edit denied | secrets/crypto exposure; SEC-SEC JSON close |
+| `Apex_SecurityFixer` | subagent | writes the named patch | applies one SEC-* secure recommendation |
 
 Keep this registry current when the skill set changes (reinstall,
 add, or deprecate one). The source of truth is the files on disk, not the

@@ -16,6 +16,12 @@ the coordination.
 | `.opencode/agents/Apex_Dev.md` | DEV agent (subagent). Implementation with TDD. |
 | `.opencode/agents/Apex_Bug.md` | BUG agent (subagent). Diagnosis with a proved root cause. |
 | `.opencode/agents/Apex_Verifier.md` | Independent verification (read-only subagent). |
+| `.opencode/agents/Apex_InjectionAuditor.md` | Security squad: injection patterns (SEC-INJ); readonly. |
+| `.opencode/agents/Apex_AuthAuditor.md` | Security squad: authn/authz (SEC-AUTH); readonly. |
+| `.opencode/agents/Apex_SecApiAuditor.md` | Security squad: API AppSec (SEC-API); readonly. |
+| `.opencode/agents/Apex_SecretsAuditor.md` | Security squad: secrets/crypto exposure (SEC-SEC); readonly. |
+| `.opencode/agents/Apex_SecurityFixer.md` | Security squad: applies one SEC-* secure patch. |
+| `.agents/skills/security-audit-core/` | Security Audit Squad protocol (canonical); Cursor/OpenCode shims point here. |
 | `.opencode/commands/harness.md` | `/harness <task>`: explicit entry to the full protocol. |
 | `.opencode/skills/harness-core/` | Registry + routing, memory, state, verification, and DoD tables. The only source; load it at the start of any task. |
 | `.cursor/` | Native Cursor port: rules, `/harness`, `harness-core` shim, Engram MCP. Matt skills are installed separately (gitignored). |

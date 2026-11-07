@@ -9,6 +9,8 @@
 !.cursor/skills/harness-core/**
 !.cursor/skills/memory-audit-core/
 !.cursor/skills/memory-audit-core/**
+!.cursor/skills/security-audit-core/
+!.cursor/skills/security-audit-core/**
 !.cursor/skills/memory-audit-js/
 !.cursor/skills/memory-audit-js/**
 !.cursor/skills/memory-audit-react/
@@ -37,6 +39,8 @@
 !.opencode/skills/harness-core/**
 !.opencode/skills/memory-audit-core/
 !.opencode/skills/memory-audit-core/**
+!.opencode/skills/security-audit-core/
+!.opencode/skills/security-audit-core/**
 !.opencode/skills/memory-audit-js/
 !.opencode/skills/memory-audit-js/**
 !.opencode/skills/memory-audit-react/

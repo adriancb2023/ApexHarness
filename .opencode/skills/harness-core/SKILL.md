@@ -19,7 +19,7 @@ Scan the task text with the table; the first match wins.
 
 | Triggers | Agent / pipeline |
 | --- | --- |
-| The user names an agent (`apex-dev`, `apex-bug`, `apex-verifier`, `apex-api-auditor`, `apex-frontend-auditor`, `apex-sql-auditor`, `apex-worker-auditor`, `apex-memory-fixer`, or the equivalent `Apex_*` id) | **That agent, directly.** Do not classify, do not query Engram, do not write `.harness/state.md`, do not run the skill router, do not verify. The user's message is the assignment. `/harness` or "run the harness" / "haz el harness" does not match this row: follow the pipeline |
+| The user names an agent (`apex-dev`, `apex-bug`, `apex-verifier`, `apex-api-auditor`, `apex-frontend-auditor`, `apex-sql-auditor`, `apex-worker-auditor`, `apex-memory-fixer`, `apex-injection-auditor`, `apex-auth-auditor`, `apex-sec-api-auditor`, `apex-secrets-auditor`, `apex-security-fixer`, or the equivalent `Apex_*` id) | **That agent, directly.** Do not classify, do not query Engram, do not write `.harness/state.md`, do not run the skill router, do not verify. The user's message is the assignment. `/harness` or "run the harness" / "haz el harness" does not match this row: follow the pipeline |
 | `bug`, `error`, `crash`, `exception`, `fails`, `broken`, `regression`, "no funciona", "falla", "se queda", "no carga", "rompe", "petazo", "stack trace", "se cuelga", "doesn't work", "hangs", "won't load" | **BUG** (subagent Apex_Bug) |
 | `implement`, `add`, `create`, `build`, `feature`, `develop`, `refactor`, `migrate`, "añade", "agrega", "implementa", "crea", "nueva versión de", "soporte para" | **DEV** (subagent Apex_Dev) |
 | Analysis, explanation, exploration, questions, plans, review of one specific point | **Direct answer** from the Orchestrator, no spawn |
@@ -245,8 +245,10 @@ Hard guarantees (enforced by the HOST, not by prompts):
 1. Hard-deny `policies[]` apply at every layer; no config or agent
    ranking can bypass them (docs: OpenCode 2).
 2. Apex_Harness `subagent`: deny `*` → allow `Apex_Dev` / `Apex_Bug` /
-   `Apex_Verifier` and the memory squad (`Apex_ApiAuditor`, `Apex_FrontendAuditor`,
-   `Apex_SqlAuditor`, `Apex_WorkerAuditor`, `Apex_MemoryFixer`). With `deny`, other agents
+   `Apex_Verifier`, the memory squad (`Apex_ApiAuditor`, `Apex_FrontendAuditor`,
+   `Apex_SqlAuditor`, `Apex_WorkerAuditor`, `Apex_MemoryFixer`), and the security
+   squad (`Apex_InjectionAuditor`, `Apex_AuthAuditor`, `Apex_SecApiAuditor`,
+   `Apex_SecretsAuditor`, `Apex_SecurityFixer`). With `deny`, other agents
    (for example a global `apex`, `build`, `general`) **disappear from the Orchestrator's
    spawn catalog**: there is no escape hatch for another harness to enter the pipeline.
 3. A project-level `default_agent` overrides the global → the session ALWAYS opens as

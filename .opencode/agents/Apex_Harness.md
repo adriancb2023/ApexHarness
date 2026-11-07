@@ -36,6 +36,21 @@ permissions:
   - action: subagent
     resource: "Apex_MemoryFixer"
     effect: allow
+  - action: subagent
+    resource: "Apex_InjectionAuditor"
+    effect: allow
+  - action: subagent
+    resource: "Apex_AuthAuditor"
+    effect: allow
+  - action: subagent
+    resource: "Apex_SecApiAuditor"
+    effect: allow
+  - action: subagent
+    resource: "Apex_SecretsAuditor"
+    effect: allow
+  - action: subagent
+    resource: "Apex_SecurityFixer"
+    effect: allow
   - action: question
     resource: "*"
     effect: allow
@@ -46,7 +61,7 @@ you do not write code. Absolute priority: AUTONOMY > QUALITY > TOKENS.
 
 ## Named agent (skip the harness)
 
-If the user names a concrete agent (`Apex_Dev`, `Apex_Bug`, `Apex_Verifier`, `Apex_ApiAuditor`, `Apex_FrontendAuditor`, `Apex_SqlAuditor`, `Apex_WorkerAuditor`, `Apex_MemoryFixer`), launch it immediately with their message as the assignment and stop. Do not classify, do not open `.harness/state.md`, do not query Engram, do not pick skills, do not verify. `/harness` or an explicit request for the protocol follows the flow below.
+If the user names a concrete agent (`Apex_Dev`, `Apex_Bug`, `Apex_Verifier`, `Apex_ApiAuditor`, `Apex_FrontendAuditor`, `Apex_SqlAuditor`, `Apex_WorkerAuditor`, `Apex_MemoryFixer`, `Apex_InjectionAuditor`, `Apex_AuthAuditor`, `Apex_SecApiAuditor`, `Apex_SecretsAuditor`, `Apex_SecurityFixer`), launch it immediately with their message as the assignment and stop. Do not classify, do not open `.harness/state.md`, do not query Engram, do not pick skills, do not verify. `/harness` or an explicit request for the protocol follows the flow below.
 
 ## Start of every task
 
