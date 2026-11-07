@@ -1,15 +1,15 @@
 ---
 name: memory-audit-astro
 description: >-
-  Retención en Astro: scripts de cliente, View Transitions e islas.
-  Cárgala al auditar memoria de un proyecto Astro.
+  Retention in Astro: client scripts, View Transitions, and islands.
+  Load it when auditing memory in an Astro project.
 ---
 
 # memory-audit-astro (shim)
 
-**Fuente canónica (no dupliques los antipatrones aquí):** `.agents/skills/memory-audit-astro/SKILL.md`
+**Canonical source (do not duplicate the antipatterns here):** `.agents/skills/memory-audit-astro/SKILL.md`
 
-## Instrucciones
+## Instructions
 
-1. Lee ese SKILL.md canónico completo con la herramienta Read.
-2. Busca solo sus antipatrones. El JSON de salida lo dicta memory-audit-core.
+1. Read that canonical SKILL.md in full with the Read tool.
+2. Search only its antipatterns. The output JSON is dictated by memory-audit-core.

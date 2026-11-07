@@ -1,15 +1,15 @@
 ---
 name: memory-audit-dotnet
 description: >-
-  Retención en .NET: eventos, IDisposable, canales sin cota y ArrayPool.
-  Cárgala al auditar memoria de un proceso .NET.
+  Retention in .NET: events, IDisposable, unbounded channels, and ArrayPool.
+  Load it when auditing memory in a .NET process.
 ---
 
 # memory-audit-dotnet (shim)
 
-**Fuente canónica (no dupliques los antipatrones aquí):** `.agents/skills/memory-audit-dotnet/SKILL.md`
+**Canonical source (do not duplicate the antipatterns here):** `.agents/skills/memory-audit-dotnet/SKILL.md`
 
-## Instrucciones
+## Instructions
 
-1. Lee ese SKILL.md canónico completo con la herramienta Read.
-2. Busca solo sus antipatrones. El JSON de salida lo dicta memory-audit-core.
+1. Read that canonical SKILL.md in full with the Read tool.
+2. Search only its antipatterns. The output JSON is dictated by memory-audit-core.

@@ -1,15 +1,15 @@
 ---
 name: memory-audit-java
 description: >-
-  Retención en Java: colecciones static, ThreadLocal y streams.
-  Cárgala al auditar memoria de un servicio Java.
+  Retention in Java: static collections, ThreadLocal, and streams.
+  Load it when auditing memory in a Java service.
 ---
 
 # memory-audit-java (shim)
 
-**Fuente canónica (no dupliques los antipatrones aquí):** `.agents/skills/memory-audit-java/SKILL.md`
+**Canonical source (do not duplicate the antipatterns here):** `.agents/skills/memory-audit-java/SKILL.md`
 
-## Instrucciones
+## Instructions
 
-1. Lee ese SKILL.md canónico completo con la herramienta Read.
-2. Busca solo sus antipatrones. El JSON de salida lo dicta memory-audit-core.
+1. Read that canonical SKILL.md in full with the Read tool.
+2. Search only its antipatterns. The output JSON is dictated by memory-audit-core.

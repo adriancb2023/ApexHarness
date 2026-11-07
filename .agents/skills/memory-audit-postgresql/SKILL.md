@@ -1,33 +1,33 @@
 ---
 name: memory-audit-postgresql
 description: >-
-  Retención específica de PostgreSQL: cursores, fetch size, jsonb y pools.
-  Cárgala al auditar memoria contra PostgreSQL, junto con memory-audit-sql.
+  PostgreSQL-specific retention: cursors, fetch size, jsonb, and pools.
+  Load it when auditing memory against PostgreSQL, together with memory-audit-sql.
 ---
 
 # Memory audit — PostgreSQL
 
-Úsala junto con `memory-audit-core` y `memory-audit-sql`. El informe JSON lo dicta el core. Esta skill solo aporta los antipatrones y la forma del parche.
+Use it together with `memory-audit-core` and `memory-audit-sql`. The core dictates the JSON report. This skill only supplies the antipatterns and the shape of the patch.
 
-## Cuándo cuenta como cargada
+## When it counts as loaded
 
-Hecho cuando Discovery nombró un driver `pg`, psycopg, asyncpg, Npgsql, `jdbc:postgresql` o SQLAlchemy con postgres, con su ruta, o cuando Apex_MemoryFixer ve esa tecnología en el hallazgo.
+Done when Discovery named a `pg` driver, psycopg, asyncpg, Npgsql, `jdbc:postgresql`, or SQLAlchemy with postgres, with its path, or when Apex_MemoryFixer sees that technology in the finding.
 
-## Antipatrones
+## Antipatterns
 
-1. `ORDER BY`, `DISTINCT` o agregación sobre un conjunto grande. Señal: sin `LIMIT` ni cursor; el cliente recibe todas las filas. Recommendation: límite, keyset o cursor de servidor.
-2. Cliente que materializa el SELECT. Señal: psycopg `fetchall`, node-pg `query()` de un result grande, Npgsql sin SequentialAccess/stream, JDBC sin `setFetchSize`. Recommendation: fetch size o cursor (DECLARE/FETCH), no un byte[] único.
-3. Columna `jsonb` o `text` ancha en el SELECT. Señal: el código usa una sola clave. Recommendation: proyectar la clave, no la columna entera.
-4. `COPY` o un volcado leído de una vez a string o `byte[]`. Señal: el cliente conserva el volcado completo. Recommendation: leer por bloques y soltar cada bloque.
-5. `LISTEN` cuyo cliente encola notificaciones. Señal: la lista no tiene tope. Recommendation: tope y descarte de la notificación ya procesada.
-6. Pool (`pg.Pool`, NpgsqlDataSource, Hikari, pool de SQLAlchemy) con `BEGIN`. Señal: el error no hace `COMMIT`/`ROLLBACK`. Recommendation: cerrar la transacción en `finally` y devolver la conexión.
+1. `ORDER BY`, `DISTINCT`, or an aggregation over a large set. Signal: no `LIMIT` and no cursor; the client receives every row. Recommendation: a limit, keyset, or server-side cursor.
+2. A client that materializes the SELECT. Signal: psycopg `fetchall`, node-pg `query()` of a large result, Npgsql without SequentialAccess/stream, JDBC without `setFetchSize`. Recommendation: fetch size or a cursor (DECLARE/FETCH), not one single byte[].
+3. A wide `jsonb` or `text` column in the SELECT. Signal: the code uses a single key. Recommendation: project the key, not the whole column.
+4. `COPY` or a dump read all at once into a string or `byte[]`. Signal: the client keeps the full dump. Recommendation: read in blocks and release each block.
+5. `LISTEN` whose client queues notifications. Signal: the list has no cap. Recommendation: a cap, and drop the notification once it is processed.
+6. A pool (`pg.Pool`, NpgsqlDataSource, Hikari, SQLAlchemy pool) with `BEGIN`. Signal: the error path does not `COMMIT`/`ROLLBACK`. Recommendation: close the transaction in `finally` and return the connection.
 
-No pidas cambiar postgresql.conf como parche de Apex_MemoryFixer. EXPLAIN o el conteo de filas en el cliente sirve de evidencia.
+Do not ask to change postgresql.conf as an Apex_MemoryFixer patch. EXPLAIN or the client-side row count is evidence.
 
-## Evidencia
+## Evidence
 
-CONFIRMED solo con perfilador o contador citado: EXPLAIN o el conteo de filas en el cliente. Sin runtime, PROBABLE con archivo y línea. Sin archivo y línea no hay finding.
+CONFIRMED only with a cited profiler or counter: EXPLAIN or the client-side row count. Without a runtime, PROBABLE with file and line. Without file and line there is no finding.
 
-## Cierre
+## Close
 
-Hecho cuando cada antipatrón de esta lista tiene archivo y línea o queda marcado ausente.
+Done when every antipattern on this list has a file and a line, or is marked absent.

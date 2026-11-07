@@ -1,15 +1,15 @@
 ---
 name: memory-audit-postgresql
 description: >-
-  Retención específica de PostgreSQL: cursores, fetch size, jsonb y pools.
-  Cárgala al auditar memoria contra PostgreSQL, junto con memory-audit-sql.
+  PostgreSQL-specific retention: cursors, fetch size, jsonb, and pools.
+  Load it when auditing memory against PostgreSQL, together with memory-audit-sql.
 ---
 
 # memory-audit-postgresql (shim)
 
-**Fuente canónica (no dupliques los antipatrones aquí):** `.agents/skills/memory-audit-postgresql/SKILL.md`
+**Canonical source (do not duplicate the antipatterns here):** `.agents/skills/memory-audit-postgresql/SKILL.md`
 
-## Instrucciones
+## Instructions
 
-1. Lee ese SKILL.md canónico completo con la herramienta Read.
-2. Busca solo sus antipatrones. El JSON de salida lo dicta memory-audit-core.
+1. Read that canonical SKILL.md in full with the Read tool.
+2. Search only its antipatterns. The output JSON is dictated by memory-audit-core.

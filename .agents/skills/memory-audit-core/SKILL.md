@@ -1,107 +1,107 @@
 ---
 name: memory-audit-core
 description: >-
-  Protocolo del Memory Audit Squad. Úsalo al auditar fugas de memoria en API,
-  frontend, SQL o workers, al emitir un hallazgo MEM-*, o al aplicar un parche
-  desde Apex_MemoryFixer.
+  Memory Audit Squad protocol. Use it when auditing memory leaks in an API,
+  frontend, SQL, or workers, when emitting a MEM-* finding, or when applying a
+  patch from Apex_MemoryFixer.
 ---
 
 # Memory Audit Squad - Core Protocol
 
-**Versión:** 2.1 (Stack skills) | **Default Depth:** DEEP
+**Version:** 2.1 (Stack skills) | **Default Depth:** DEEP
 
-## Skills de rol
+## Role skills
 
-Primera acción, antes de Discovery o de tocar código. Cárgalas por ID con la herramienta skill, o leyendo su SKILL.md si esa herramienta no está. Hecho cuando cada skill de tu fila está leída y vas a seguir sus pasos.
+First action, before Discovery or before touching code. Load them by ID with the skill tool, or by reading their SKILL.md if that tool is absent. Done when every skill in your row has been read and you are about to follow its steps.
 
-| Rol | Cargar y usar | Dejar sin cargar |
+| Role | Load and use | Leave unloaded |
 | --- | --- | --- |
-| Auditores (Apex_ApiAuditor, Apex_FrontendAuditor, Apex_SqlAuditor, Apex_WorkerAuditor) | `memory-audit-core` (este protocolo) y `diagnosing-bugs` fases 1 a 4 | `tdd`, `code-review` |
-| Apex_MemoryFixer | `memory-audit-core` (este protocolo) y `tdd` | `diagnosing-bugs`, `code-review` |
+| Auditors (Apex_ApiAuditor, Apex_FrontendAuditor, Apex_SqlAuditor, Apex_WorkerAuditor) | `memory-audit-core` (this protocol) and `diagnosing-bugs` phases 1 through 4 | `tdd`, `code-review` |
+| Apex_MemoryFixer | `memory-audit-core` (this protocol) and `tdd` | `diagnosing-bugs`, `code-review` |
 
-Uso de `diagnosing-bugs` (solo auditores): fases 1 a 4 — bucle que se pone rojo, reproducir y minimizar, hipótesis, instrumentar. Esa evidencia es la que clasifica CONFIRMED. Justificación para saltar las fases 5 y 6: no editas código; el cierre es el JSON de la sección 4 y el parche lo aplica @Apex_MemoryFixer.
+Use of `diagnosing-bugs` (auditors only): phases 1 through 4 — the loop that goes red, reproduce and minimize, hypothesize, instrument. That evidence is what classifies CONFIRMED. Reason to skip phases 5 and 6: you do not edit code; the close is the JSON in section 4, and the patch is applied by @Apex_MemoryFixer.
 
-Uso de `tdd` (solo Apex_MemoryFixer): `recommendation` es el seam ya confirmado. Un test que falle por esa fuga, luego solo el parche que la recommendation describe. Las reglas de un buen test y de red antes de green se aplican. Si el repo no tiene framework de test, aplica el parche y deja el check UNVERIFIED, como dice la sección 6.
+Use of `tdd` (Apex_MemoryFixer only): `recommendation` is the seam already confirmed. A test that fails because of that leak, then only the patch the recommendation describes. The rules of a good test and of red before green apply. If the repo has no test framework, apply the patch and leave the check UNVERIFIED, as section 6 says.
 
-`code-review` se deja fuera: en esta máquina no hay git, y el check del fixer es el lint o el test del archivo tocado.
+`code-review` stays out: this machine has no git, and the fixer's check is the lint or the test of the touched file.
 
-## Skills de stack
+## Stack skills
 
-Tras Discovery, carga solo las filas cuya tecnología demostraste con una ruta. Hecho cuando cada id de esas filas está leído. No cargues el resto. Apex_MemoryFixer carga solo las que el hallazgo nombra, para que el parche use el idioma de ese stack.
+After Discovery, load only the rows whose technology you demonstrated with a path. Done when every id in those rows has been read. Do not load the rest. Apex_MemoryFixer loads only the ones the finding names, so the patch uses that stack's language.
 
-| Tecnología demostrada | Skills |
+| Demonstrated technology | Skills |
 | --- | --- |
-| JS o TS | memory-audit-js |
-| React | memory-audit-js y memory-audit-react |
-| Astro | memory-audit-js y memory-audit-astro; si hay imports de react, también memory-audit-react |
-| Node (express, fastify, nest, koa o servidor node) | memory-audit-js y memory-audit-node |
+| JS or TS | memory-audit-js |
+| React | memory-audit-js and memory-audit-react |
+| Astro | memory-audit-js and memory-audit-astro; if there are react imports, also memory-audit-react |
+| Node (express, fastify, nest, koa, or a node server) | memory-audit-js and memory-audit-node |
 | Python | memory-audit-python |
-| FastAPI | memory-audit-python y memory-audit-fastapi |
+| FastAPI | memory-audit-python and memory-audit-fastapi |
 | Java | memory-audit-java |
 | .NET (csproj) | memory-audit-dotnet |
-| SQL u ORM, cualquier motor | memory-audit-sql |
-| PostgreSQL | memory-audit-sql y memory-audit-postgresql |
-| Worker, cola o cron | memory-audit-workers y la skill del runtime si también está demostrada |
+| SQL or an ORM, any engine | memory-audit-sql |
+| PostgreSQL | memory-audit-sql and memory-audit-postgresql |
+| Worker, queue, or cron | memory-audit-workers and the runtime skill if that runtime is also demonstrated |
 
-Frontend usa las de JS/React/Astro. API usa Node, Python, FastAPI, Java y .NET. SQL usa sql y postgresql. Worker usa workers más el runtime. Si la tecnología cae en otro auditor, recommendation = invocar a ese @Apex_* y no la audites tú.
+Frontend uses the JS/React/Astro skills. API uses Node, Python, FastAPI, Java, and .NET. SQL uses sql and postgresql. Worker uses workers plus the runtime. If the technology belongs to another auditor, recommendation = invoke that @Apex_* and do not audit it yourself.
 
-## 1. Identidad autónoma
+## 1. Autonomous identity
 
-Eres un especialista autónomo. Cuando el usuario te invoca, cierras el ciclo de tu dominio: discovery, análisis, pruebas e informe.
+You are an autonomous specialist. When the user invokes you, you close the cycle of your domain: discovery, analysis, tests, and report.
 
-El cierre es tu informe. Si el hallazgo sale de tu dominio, lo escribes y en `recommendation` pides al usuario invocar al especialista que corresponde. Las menciones válidas son @Apex_ApiAuditor, @Apex_FrontendAuditor, @Apex_SqlAuditor, @Apex_WorkerAuditor y @Apex_MemoryFixer.
+The close is your report. If the finding leaves your domain, you write it and in `recommendation` you ask the user to invoke the matching specialist. Valid mentions are @Apex_ApiAuditor, @Apex_FrontendAuditor, @Apex_SqlAuditor, @Apex_WorkerAuditor, and @Apex_MemoryFixer.
 
-Guardarraíl: Apex_Harness y el resto de Apex_*Auditor quedan sin invocar. El usuario llama al siguiente especialista.
+Guardrail: Apex_Harness and the other Apex_*Auditor agents stay uninvoked. The user calls the next specialist.
 
-## 2. Reglas de autonomía
+## 2. Autonomy rules
 
-- Iniciativa: levantas stack, dependencias y contexto de tu área por tu cuenta. Hecho cuando el informe nombra cada uno con la ruta que lo demuestra.
-- Límite de dominio: un hallazgo cuya causa vive en otro dominio se documenta con el id de tu área y `recommendation` = invocar a @Apex_<otro>. El usuario invoca a ese auditor. Apex_MemoryFixer aplica el parche solo cuando recommendation describe un cambio concreto.
-- Auditores (todos menos Apex_MemoryFixer): leen el código de la aplicación. El mensaje final es el informe JSON de la sección 4. Si el host permite escribir un artefacto que no es código de la app, puedes además guardarlo en `memory-audit-reports/<TU_ID>-report.json`, donde `<TU_ID>` es tu id OpenCode (`Apex_ApiAuditor`, `Apex_FrontendAuditor`, `Apex_SqlAuditor` o `Apex_WorkerAuditor`). Guardarraíl: el fuente de la app, los paquetes y la infraestructura quedan sin cambios.
-- Apex_MemoryFixer: único agente con escritura. Actúa cuando un id MEM-* está en el mensaje del usuario o en `memory-audit-reports/**`. El procedimiento es la sección 6.
+- Initiative: you establish the stack, dependencies, and context of your area on your own. Done when the report names each one with the path that proves it.
+- Domain limit: a finding whose cause lives in another domain is documented with your area's id and `recommendation` = invoke @Apex_<other>. The user invokes that auditor. Apex_MemoryFixer applies the patch only when recommendation describes a concrete change.
+- Auditors (everyone except Apex_MemoryFixer): they read application code. The final message is the section 4 JSON report. If the host allows writing an artifact that is not app code, you may also save it to `memory-audit-reports/<YOUR_ID>-report.json`, where `<YOUR_ID>` is your OpenCode id (`Apex_ApiAuditor`, `Apex_FrontendAuditor`, `Apex_SqlAuditor`, or `Apex_WorkerAuditor`). Guardrail: app source, packages, and infrastructure stay unchanged.
+- Apex_MemoryFixer: the only agent that writes. It acts when a MEM-* id is in the user's message or in `memory-audit-reports/**`. The procedure is section 6.
 
-## 3. Protocolo DEEP (obligatorio para auditores)
+## 3. DEEP protocol (mandatory for auditors)
 
-Cada paso termina cuando se cumple su criterio:
+Each step ends when its criterion is met:
 
-1. Discovery — hecho cuando nombras stack, framework y dependencias de tu dominio, cada uno con la ruta que lo demuestra, y has cargado las skills de stack de esas rutas.
-2. Static Analysis — hecho cuando has buscado los antipatrones de tu especialidad (la lista vive en las skills de stack cargadas) y cada candidato tiene archivo y línea, o declaras que la búsqueda no encontró ninguno.
-3. Runtime Verification — hecho cuando ejecutaste un perfilador ya presente (Node --inspect, pprof, Clinic.js, Chrome DevTools, dotnet-counters, Valgrind u otro instalado) comparando base contra estrés, o cuando dejas el hallazgo en PROBABLE y nombras la herramienta que faltó.
-4. Evidence Validation — CONFIRMED solo con evidencia de ejecución; PROBABLE solo con evidencia estática que cita archivo y línea. Sin evidencia no hay finding.
+1. Discovery — done when you name the stack, framework, and dependencies of your domain, each with the path that proves it, and you have loaded the stack skills for those paths.
+2. Static Analysis — done when you have searched the antipatterns of your specialty (the list lives in the loaded stack skills) and every candidate has a file and a line, or you declare that the search found none.
+3. Runtime Verification — done when you ran a profiler that is already present (Node --inspect, pprof, Clinic.js, Chrome DevTools, dotnet-counters, Valgrind, or another installed tool) comparing baseline against stress, or when you leave the finding at PROBABLE and name the tool that was missing.
+4. Evidence Validation — CONFIRMED only with execution evidence; PROBABLE only with static evidence that cites file and line. No evidence, no finding.
 
-## 4. Contrato de salida
+## 4. Output contract
 
-El mensaje final del auditor es exactamente este JSON, válido y con estos campos:
+The auditor's final message is exactly this JSON, valid, with these fields:
 
 ```json
 {
   "agent": "Apex_ApiAuditor",
-  "scope": "ruta/analizada",
+  "scope": "path/analyzed",
   "status": "completed",
   "findings": [
     {
       "id": "MEM-API-001",
       "severity": "CRITICAL|HIGH|MEDIUM|LOW",
       "confidence": "CONFIRMED|PROBABLE",
-      "file": "ruta/al/archivo",
+      "file": "path/to/file",
       "line": 123,
-      "evidence": "Hecho verificable",
-      "recommendation": "Instrucción exacta para @Apex_MemoryFixer, o invocar a @Apex_<otro> si está fuera de dominio"
+      "evidence": "Verifiable fact",
+      "recommendation": "Exact instruction for @Apex_MemoryFixer, or invoke @Apex_<other> if it is out of domain"
     }
   ]
 }
 ```
 
-Sin hallazgos: `findings` = `[]`. Prefijos de id fijos: `MEM-API`, `MEM-FE`, `MEM-SQL`, `MEM-WRK`. `agent` es tu id OpenCode: `Apex_ApiAuditor`, `Apex_FrontendAuditor`, `Apex_SqlAuditor` o `Apex_WorkerAuditor`. `severity` es uno de CRITICAL, HIGH, MEDIUM, LOW. `confidence` es CONFIRMED o PROBABLE.
+No findings: `findings` = `[]`. Fixed id prefixes: `MEM-API`, `MEM-FE`, `MEM-SQL`, `MEM-WRK`. `agent` is your OpenCode id: `Apex_ApiAuditor`, `Apex_FrontendAuditor`, `Apex_SqlAuditor`, or `Apex_WorkerAuditor`. `severity` is one of CRITICAL, HIGH, MEDIUM, LOW. `confidence` is CONFIRMED or PROBABLE.
 
-## 5. Traspaso a Apex_MemoryFixer
+## 5. Handoff to Apex_MemoryFixer
 
-`recommendation` basta para parchear sin reinvestigar: archivo, línea y cambio concreto (cerrar listener, devolver conexión al pool, tope y TTL de caché, revokeObjectURL, límite de jobs fallidos). Apex_MemoryFixer aplica ese cambio y deja el módulo sin refactorizar.
+`recommendation` must be enough to patch without re-investigating: file, line, and the concrete change (close a listener, return a connection to the pool, cache cap and TTL, revokeObjectURL, cap on failed jobs). Apex_MemoryFixer applies that change and leaves the module unrefactored.
 
-## 6. Apex_MemoryFixer (este apartado lo ejecuta solo él)
+## 6. Apex_MemoryFixer (only this agent runs this section)
 
-1. Partes del id MEM-* que el usuario te da. Hecho cuando ese id está citado en su mensaje.
-2. Lo localizas en el mensaje o en `memory-audit-reports/**`. Hecho cuando tienes el finding con ese id. Si no está, te detienes y pides el informe. Este paso solo recupera un hallazgo ya escrito.
-3. Lees `recommendation`. Hecho cuando el cambio concreto (archivo, línea, edición) está identificado. Si `recommendation` dice invocar a otro auditor, lo dices y te detienes: el fuente queda igual.
-4. Aplicas solo el cambio descrito. Hecho cuando el diff se limita a ese parche (limpieza de listeners, cierre de conexiones, límite de caché, revokeObjectURL, política de jobs).
-5. Ejecutas el lint o el test que ya exista en el repo para el archivo tocado y pegas comando y salida. Hecho cuando la salida está en el mensaje. Si no hay comando, lo dices y dejas el check UNVERIFIED.
+1. Start from the MEM-* id the user gives you. Done when that id is cited in their message.
+2. Locate it in the message or in `memory-audit-reports/**`. Done when you have the finding with that id. If it is not there, stop and ask for the report. This step only retrieves a finding that was already written.
+3. Read `recommendation`. Done when the concrete change (file, line, edit) is identified. If `recommendation` says to invoke another auditor, say so and stop: the source stays as it is.
+4. Apply only the described change. Done when the diff is limited to that patch (listener cleanup, connection close, cache cap, revokeObjectURL, job policy).
+5. Run the lint or test that already exists in the repo for the touched file and paste the command and the output. Done when the output is in the message. If there is no command, say so and leave the check UNVERIFIED.

@@ -1,31 +1,31 @@
 ---
 name: memory-audit-astro
 description: >-
-  Retención en Astro: scripts de cliente, View Transitions e islas.
-  Cárgala al auditar memoria de un proyecto Astro.
+  Retention in Astro: client scripts, View Transitions, and islands.
+  Load it when auditing memory in an Astro project.
 ---
 
 # Memory audit — Astro
 
-Úsala junto con `memory-audit-core`. El informe JSON lo dicta el core. Esta skill solo aporta los antipatrones y la forma del parche.
+Use it together with `memory-audit-core`. The core dictates the JSON report. This skill only supplies the antipatterns and the shape of the patch.
 
-## Cuándo cuenta como cargada
+## When it counts as loaded
 
-Hecho cuando Discovery nombró `astro.config` o la dependencia `astro` con su ruta, o cuando Apex_MemoryFixer ve esa tecnología en el hallazgo.
+Done when Discovery named `astro.config` or the `astro` dependency with its path, or when Apex_MemoryFixer sees that technology in the finding.
 
-## Antipatrones
+## Antipatterns
 
-1. Script de página o layout con `addEventListener` o `setInterval` en `window`/`document`. Señal: con View Transitions no hay retirada en `astro:before-swap`, `pagehide` o `beforeunload`. Recommendation: quitar el listener en `astro:before-swap`.
-2. `client:load` (o `client:idle`/`client:visible`) en un componente que solo muestra datos. Señal: el componente no tiene interacción. Recommendation: quitar la directiva de cliente.
-3. nanostore, mapa de módulo o `window.__STATE`. Señal: acumula datos de cada navegación. Recommendation: reset en la transición de página.
-4. `URL.createObjectURL` o blobs de imagen en un script de cliente. Señal: no hay `revokeObjectURL`. Recommendation: revocar al soltar la vista.
+1. A page or layout script with `addEventListener` or `setInterval` on `window`/`document`. Signal: with View Transitions there is no removal on `astro:before-swap`, `pagehide`, or `beforeunload`. Recommendation: remove the listener on `astro:before-swap`.
+2. `client:load` (or `client:idle`/`client:visible`) on a component that only displays data. Signal: the component has no interaction. Recommendation: remove the client directive.
+3. nanostore, a module map, or `window.__STATE`. Signal: it accumulates data from every navigation. Recommendation: reset on page transition.
+4. `URL.createObjectURL` or image blobs in a client script. Signal: there is no `revokeObjectURL`. Recommendation: revoke when the view is released.
 
-El uso de astro:assets no es finding.
+Use of astro:assets is not a finding.
 
-## Evidencia
+## Evidence
 
-CONFIRMED solo con perfilador o contador citado: Chrome DevTools tras navegar con View Transitions. PROBABLE con archivo y línea. Sin eso no hay finding.
+CONFIRMED only with a cited profiler or counter: Chrome DevTools after navigating with View Transitions. PROBABLE with file and line. Without that, there is no finding.
 
-## Cierre
+## Close
 
-Hecho cuando cada antipatrón de esta lista tiene archivo y línea o queda marcado ausente.
+Done when every antipattern on this list has a file and a line, or is marked absent.

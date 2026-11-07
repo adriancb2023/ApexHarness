@@ -1,55 +1,55 @@
-# ApexHarness — reglas del proyecto
+# ApexHarness — project rules
 
-**Propietario:** Adrián Cruz Barranco
+**Owner:** Adrián Cruz Barranco
 
-Este repositorio **es** el Engineering Agent Harness: una capa de orquestación
-(Orchestrator, Skill Router, Memory Router/Writer, Verification, Policies) que vive
-dentro de OpenCode y reutiliza sus mecanismos nativos. No hay runtime externo:
-no Node, no CLI, no servicio. OpenCode sigue ejecutando todo; el harness da la
-coordinación.
+This repository **is** the Engineering Agent Harness: an orchestration layer
+(Orchestrator, Skill Router, Memory Router/Writer, Verification, Policies) that lives
+inside OpenCode and reuses its native mechanisms. There is no external runtime:
+no Node, no CLI, no service. OpenCode still executes everything; the harness provides
+the coordination.
 
-## Mapa
+## Map
 
-| Ruta | Rol |
+| Path | Role |
 | --- | --- |
-| `.opencode/agents/Apex_Harness.md` | Orchestrator (agente primario). Clasifica, enruta, coordina, verifica, actualiza memoria. No codifica. |
-| `.opencode/agents/Apex_Dev.md` | Agente DEV (subagente). Implementación con TDD. |
-| `.opencode/agents/Apex_Bug.md` | Agente BUG (subagente). Diagnóstico con causa raíz probada. |
-| `.opencode/agents/Apex_Verifier.md` | Verificación independiente (subagente read-only). |
-| `.opencode/commands/harness.md` | `/harness <tarea>`: entrada explícita al protocolo completo. |
-| `.opencode/skills/harness-core/` | Registro + tablas de routing, memoria, estados, verificación y DoD. Única fuente; cárgala al empezar cualquier tarea. |
-| `.cursor/` | Port nativo Cursor: rules, `/harness`, shim `harness-core`, Engram MCP. Skills Matt se instalan aparte (gitignored). |
-| `opencode.json` | Políticas de permisos (referencia en `/docs/CAPABILITIES.md` y `policies/SAFETY.md`). |
-| `.harness/` | Artefactos por tarea: `state.md`, `cache.md`, `metrics.jsonl`. |
-| `docs/` | Hallazgos de capacidades, métricas, portabilidad a Cursor, metodologías. |
+| `.opencode/agents/Apex_Harness.md` | Orchestrator (primary agent). Classifies, routes, coordinates, verifies, updates memory. Does not code. |
+| `.opencode/agents/Apex_Dev.md` | DEV agent (subagent). Implementation with TDD. |
+| `.opencode/agents/Apex_Bug.md` | BUG agent (subagent). Diagnosis with a proved root cause. |
+| `.opencode/agents/Apex_Verifier.md` | Independent verification (read-only subagent). |
+| `.opencode/commands/harness.md` | `/harness <task>`: explicit entry to the full protocol. |
+| `.opencode/skills/harness-core/` | Registry + routing, memory, state, verification, and DoD tables. The only source; load it at the start of any task. |
+| `.cursor/` | Native Cursor port: rules, `/harness`, `harness-core` shim, Engram MCP. Matt skills are installed separately (gitignored). |
+| `opencode.json` | Permission policies (reference in `/docs/CAPABILITIES.md` and `policies/SAFETY.md`). |
+| `.harness/` | Per-task artifacts: `state.md`, `cache.md`, `metrics.jsonl`. |
+| `docs/` | Capability findings, metrics, Cursor portability, methodologies. |
 
-## Reglas universales (todos los agentes, en cualquier proyecto con este harness)
+## Universal rules (every agent, in any project with this harness)
 
-1. **Evidencia > aserción.** Nunca declares COMPLETED/PASS sin comando ejecutado y salida.
-2. **Prioridad de fuentes:** tests/evidencia > código actual > Engram > supuestos.
-   Una memoria que contradice el código se investiga; no se obedece.
-3. **Skills bajo demanda:** carga solo lo que aporta valor a esta tarea (2–4 típicas);
-   di en una línea qué descartas y por qué.
-4. **Contexto mínimo:** archivos/símbolos implicados en la tarea, no el repo entero.
-5. **Engram:** se consulta solo cuando hay un gate que lo justifique; se escribe solo
-   conocimiento reutilizable (reglas en harness-core §3 y §9).
-6. **Handoffs compactos:** entre agentes viaja un contrato, nunca la conversación entera.
-7. **Estado del pipeline** (`.harness/state.md`) y métricas (`.harness/metrics.jsonl`)
-   se mantienen al día; los escribe el Orchestrator.
-8. Los agentes no editan la configuración global del usuario (`~/.config/opencode/**`).
-9. Responde en el idioma del usuario.
-10. **Un solo harness:** Apex_Harness es el único Orchestrator válido en un repo
-   con este harness; no rutes a agentes ajenos (`apex` global, `build`, `general`,
-   `explore`) — el allowlist de `subagent` de Apex_Harness los bloquea a nivel de
-   permisos (ver harness-core §12).
+1. **Evidence > assertion.** Never declare COMPLETED/PASS without a command that was run and its output.
+2. **Source priority:** tests/evidence > current code > Engram > assumptions.
+   A memory that contradicts the code is investigated; it is not obeyed.
+3. **Skills on demand:** load only what adds value to this task (2–4 typical);
+   say in one line what you drop and why.
+4. **Minimum context:** the files and symbols involved in the task, not the whole repo.
+5. **Engram:** consult it only when a gate justifies it; write only
+   reusable knowledge (rules in harness-core §3 and §9).
+6. **Compact handoffs:** a contract travels between agents, never the whole conversation.
+7. **Pipeline state** (`.harness/state.md`) and metrics (`.harness/metrics.jsonl`)
+   stay current; the Orchestrator writes them.
+8. Agents do not edit the user's global configuration (`~/.config/opencode/**`).
+9. Reply in the user's language.
+10. **One harness:** Apex_Harness is the only valid Orchestrator in a repo
+    with this harness; do not route to foreign agents (global `apex`, `build`, `general`,
+    `explore`) — Apex_Harness's `subagent` allowlist blocks them at the
+    permission layer (see harness-core §12).
 
-## Notas de entorno
+## Environment notes
 
-- `git` no está instalado en esta máquina: cualquier check `git diff/log` se marca
-  UNVERIFIED y se sustituye por tests/evidencia de archivo. Instalar git lo desbloquea
-  (también el instalador `npx skills add mattpocock/skills`).
-- Skills Matt **no** se versionan: paso 2 de instalación (README / harness-core §12).
-  Viven en `.opencode/skills/*` y `.cursor/skills/*` (gitignored salvo `harness-core`).
+- `git` is not installed on this machine: any `git diff/log` check is marked
+  UNVERIFIED and replaced by tests or file evidence. Installing git unlocks it
+  (and the `npx skills add mattpocock/skills` installer).
+- Matt skills are **not versioned**: install step 2 (README / harness-core §12).
+  They live in `.opencode/skills/*` and `.cursor/skills/*` (gitignored except `harness-core`).
   Bootstrap: `scripts/bootstrap-matt-skills.ps1`.
-- `git` de este directorio conserva historial de un proyecto anterior distinto
-  (harness externo runtime, descartado). No se toca.
+- The `git` history of this directory belongs to a different earlier project
+  (an external runtime harness, discarded). Do not touch it.

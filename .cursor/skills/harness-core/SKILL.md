@@ -1,22 +1,22 @@
 ---
 name: harness-core
 description: >-
-  Core del Engineering Harness — tablas de clasificación de tareas, routing de
-  skills y agentes, reglas de memoria Engram, máquina de estados, handoffs,
-  verificación y Definition of Done. Cargar al empezar cualquier tarea del
-  harness (/harness o pipeline Apex).
+  Core of the Engineering Harness — task classification tables, skill and agent
+  routing, Engram memory rules, state machine, handoffs, verification, and
+  Definition of Done. Load it at the start of any harness task (/harness or the
+  Apex pipeline).
 ---
 
 # Harness Core (Cursor shim)
 
-**Fuente canónica (no duplicar tablas aquí):**
+**Canonical source (do not duplicate the tables here):**
 
 - `.opencode/skills/harness-core/SKILL.md`
-- `.opencode/skills/harness-core/references/registry.md` (solo si dudas de una skill)
+- `.opencode/skills/harness-core/references/registry.md` (only if you are unsure about a skill)
 
-## Instrucciones
+## Instructions
 
-1. Lee el SKILL.md canónico completo con la herramienta Read.
-2. Aplica sus tablas (§1–§12) sin re-decidir lo ya resuelto.
-3. En Cursor, los agentes `Apex_*` se emulan vía `.cursor/rules/apex-roles.mdc` (no hay allowlist de host).
-4. Skills Matt (`tdd`, `code-review`, `diagnosing-bugs`, …): deben existir bajo `.cursor/skills/<id>/` tras el paso de instalación documentado en `docs/CURSOR.md` / README. Si faltan, dilo y no inventes el contenido de la skill.
+1. Read the canonical SKILL.md in full with the Read tool.
+2. Apply its tables (§1–§12) without re-deciding what is already settled.
+3. On Cursor, `Apex_*` agents are emulated via `.cursor/rules/apex-roles.mdc` (there is no host allowlist).
+4. Matt skills (`tdd`, `code-review`, `diagnosing-bugs`, …): they must exist under `.cursor/skills/<id>/` after the install step documented in `docs/CURSOR.md` / README. If they are missing, say so and do not invent the skill's content.

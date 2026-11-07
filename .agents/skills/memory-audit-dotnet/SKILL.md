@@ -1,33 +1,33 @@
 ---
 name: memory-audit-dotnet
 description: >-
-  Retención en .NET: eventos, IDisposable, canales sin cota y ArrayPool.
-  Cárgala al auditar memoria de un proceso .NET.
+  Retention in .NET: events, IDisposable, unbounded channels, and ArrayPool.
+  Load it when auditing memory in a .NET process.
 ---
 
 # Memory audit — .NET
 
-Úsala junto con `memory-audit-core`. El informe JSON lo dicta el core. Esta skill solo aporta los antipatrones y la forma del parche.
+Use it together with `memory-audit-core`. The core dictates the JSON report. This skill only supplies the antipatterns and the shape of the patch.
 
-## Cuándo cuenta como cargada
+## When it counts as loaded
 
-Hecho cuando Discovery nombró un `*.csproj` con su ruta, o cuando Apex_MemoryFixer ve esa tecnología en el hallazgo.
+Done when Discovery named a `*.csproj` with its path, or when Apex_MemoryFixer sees that technology in the finding.
 
-## Antipatrones
+## Antipatterns
 
-1. Tipo con `Stream`, evento o handle nativo. Señal: el llamador no usa `using` ni `Dispose`. Recommendation: `using`.
-2. `+=` a un evento de un objeto de larga vida (static o singleton). Señal: no hay `-=`. Recommendation: `-=` en `Dispose` o al cerrar el scope.
-3. `ConcurrentDictionary` o `IMemoryCache`. Señal: sin `SizeLimit` ni expiración, o `GetOrCreate` del grafo entero. Recommendation: SizeLimit y expiración; no cachear el grafo.
-4. `Channel.CreateUnbounded` o una `List` de jobs en un campo de `BackgroundService`/`IHostedService`. Señal: el canal o la lista no tienen cota. Recommendation: `Channel.CreateBounded`.
-5. `byte[]`, `MemoryStream` o contenido HTTP de cada request. Señal: acumulado en un campo static. Recommendation: no acumular; usar y soltar.
-6. `ArrayPool.Shared.Rent`. Señal: no hay `Return` en el `finally`. Recommendation: `Return` en finally.
+1. A type with a `Stream`, an event, or a native handle. Signal: the caller does not use `using` or `Dispose`. Recommendation: `using`.
+2. `+=` on an event of a long-lived object (static or singleton). Signal: there is no `-=`. Recommendation: `-=` in `Dispose` or when the scope closes.
+3. `ConcurrentDictionary` or `IMemoryCache`. Signal: no `SizeLimit` and no expiration, or `GetOrCreate` of the whole graph. Recommendation: SizeLimit and expiration; do not cache the graph.
+4. `Channel.CreateUnbounded` or a job `List` on a field of `BackgroundService`/`IHostedService`. Signal: the channel or the list has no bound. Recommendation: `Channel.CreateBounded`.
+5. A `byte[]`, `MemoryStream`, or the HTTP content of every request. Signal: accumulated on a static field. Recommendation: do not accumulate; use it and release it.
+6. `ArrayPool.Shared.Rent`. Signal: there is no `Return` in the `finally`. Recommendation: `Return` in finally.
 
-Si el retenedor es un `DbContext` singleton con un `ToList` enorme, el finding queda aquí solo cuando el campo es del proceso. Si la causa es la consulta, recommendation = invocar a @Apex_SqlAuditor.
+If the retainer is a singleton `DbContext` with a huge `ToList`, the finding stays here only when the field belongs to the process. If the cause is the query, recommendation = invoke @Apex_SqlAuditor.
 
-## Evidencia
+## Evidence
 
-CONFIRMED solo con perfilador o contador citado: dotnet-counters o dotnet-gcdump, si están. Si no están, PROBABLE con archivo y línea. Sin archivo y línea no hay finding.
+CONFIRMED only with a cited profiler or counter: dotnet-counters or dotnet-gcdump, if they are present. If they are absent, PROBABLE with file and line. Without file and line there is no finding.
 
-## Cierre
+## Close
 
-Hecho cuando cada antipatrón de esta lista tiene archivo y línea o queda marcado ausente.
+Done when every antipattern on this list has a file and a line, or is marked absent.

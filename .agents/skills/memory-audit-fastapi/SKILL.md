@@ -1,30 +1,30 @@
 ---
 name: memory-audit-fastapi
 description: >-
-  Retención en FastAPI: Depends, background tasks y estado de app.
-  Cárgala al auditar memoria de una app FastAPI. Carga también memory-audit-python.
+  Retention in FastAPI: Depends, background tasks, and app state.
+  Load it when auditing memory in a FastAPI app. Also load memory-audit-python.
 ---
 
 # Memory audit — FastAPI
 
-Úsala junto con `memory-audit-core` y `memory-audit-python`. El informe JSON lo dicta el core. Esta skill solo aporta los antipatrones y la forma del parche.
+Use it together with `memory-audit-core` and `memory-audit-python`. The core dictates the JSON report. This skill only supplies the antipatterns and the shape of the patch.
 
-## Cuándo cuenta como cargada
+## When it counts as loaded
 
-Hecho cuando Discovery nombró un import de `fastapi` o la dependencia fastapi con su ruta, o cuando Apex_MemoryFixer ve esa tecnología en el hallazgo.
+Done when Discovery named a `fastapi` import or the fastapi dependency with its path, or when Apex_MemoryFixer sees that technology in the finding.
 
-## Antipatrones
+## Antipatterns
 
-1. `Depends` que abre sesión, archivo o cliente. Señal: hace `return` en vez de `yield` con close en el `finally`. Recommendation: yield y close.
-2. `BackgroundTasks` que captura el body entero o un `UploadFile` leído a memoria. Señal: lo guarda en un módulo. Recommendation: no retener el body; pasar solo el id.
-3. `dict` de módulo o `app.state` usado como caché de respuestas. Señal: sin máximo. Recommendation: tope y TTL.
-4. `StreamingResponse` o `FileResponse`. Señal: el iterator deja el archivo abierto si el cliente corta. Recommendation: cerrar en `finally`.
-5. Middleware que hace append del body o de `request.state`. Señal: la lista vive el proceso. Recommendation: no acumular; medir sin guardar el body.
+1. A `Depends` that opens a session, file, or client. Signal: it `return`s instead of `yield` with close in the `finally`. Recommendation: yield and close.
+2. `BackgroundTasks` that captures the whole body or an `UploadFile` read into memory. Signal: it stores that on a module. Recommendation: do not retain the body; pass only the id.
+3. A module `dict` or `app.state` used as a response cache. Signal: no maximum. Recommendation: a cap and a TTL.
+4. `StreamingResponse` or `FileResponse`. Signal: the iterator leaves the file open if the client disconnects. Recommendation: close in `finally`.
+5. Middleware that appends the body or `request.state`. Signal: the list lives for the process. Recommendation: do not accumulate; measure without storing the body.
 
-## Evidencia
+## Evidence
 
-CONFIRMED solo con perfilador o contador citado: tracemalloc. Si tracemalloc no está, PROBABLE con archivo y línea. Sin archivo y línea no hay finding.
+CONFIRMED only with a cited profiler or counter: tracemalloc. If tracemalloc is absent, PROBABLE with file and line. Without file and line there is no finding.
 
-## Cierre
+## Close
 
-Hecho cuando cada antipatrón de esta lista tiene archivo y línea o queda marcado ausente.
+Done when every antipattern on this list has a file and a line, or is marked absent.

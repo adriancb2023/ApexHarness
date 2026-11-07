@@ -1,32 +1,32 @@
 ---
 name: memory-audit-react
 description: >-
-  Retención en React: effects sin cleanup, cachés de datos y objetos URL.
-  Cárgala al auditar memoria de componentes React.
+  Retention in React: effects without cleanup, data caches, and URL objects.
+  Load it when auditing memory in React components.
 ---
 
 # Memory audit — React
 
-Úsala junto con `memory-audit-core`. El informe JSON lo dicta el core. Esta skill solo aporta los antipatrones y la forma del parche.
+Use it together with `memory-audit-core`. The core dictates the JSON report. This skill only supplies the antipatterns and the shape of the patch.
 
-## Cuándo cuenta como cargada
+## When it counts as loaded
 
-Hecho cuando Discovery nombró la dependencia `react` o un import de `react` con su ruta, o cuando Apex_MemoryFixer ve esa tecnología en el hallazgo.
+Done when Discovery named the `react` dependency or a `react` import with its path, or when Apex_MemoryFixer sees that technology in the finding.
 
-## Antipatrones
+## Antipatterns
 
-1. `useEffect` o `useLayoutEffect` con listener, interval, WebSocket u observer. Señal: el effect no devuelve función de cleanup. Recommendation: devolver la desuscripción.
-2. `fetch` o axios en un effect. Señal: no hay `AbortController` en el cleanup. Recommendation: abort en el cleanup.
-3. React Query, SWR o caché de router. Señal: `gcTime`/`cacheTime` infinito, o un `QueryClient` de módulo que no libera páginas al cambiar de ruta. Recommendation: gcTime finito y no retener el page data en un módulo.
-4. Ref que guarda un nodo DOM, o `URL.createObjectURL`. Señal: el ref sigue puesto y no hay `revokeObjectURL` al desmontar. Recommendation: cleanup que anula y revoca.
-5. Resultado grande de un await guardado en un módulo o en un store después de que el componente se desmontó. Señal: escritura fuera del componente tras el unmount, o históricos acumulados en el módulo. Recommendation: no escribir fuera del componente si el efecto ya limpió, y no acumular históricos en el módulo.
+1. `useEffect` or `useLayoutEffect` with a listener, interval, WebSocket, or observer. Signal: the effect does not return a cleanup function. Recommendation: return the unsubscribe.
+2. `fetch` or axios inside an effect. Signal: there is no `AbortController` in the cleanup. Recommendation: abort in the cleanup.
+3. React Query, SWR, or a router cache. Signal: infinite `gcTime`/`cacheTime`, or a module-level `QueryClient` that does not release pages on route change. Recommendation: a finite gcTime, and do not retain page data on a module.
+4. A ref that stores a DOM node, or `URL.createObjectURL`. Signal: the ref stays set and there is no `revokeObjectURL` on unmount. Recommendation: cleanup that nulls and revokes.
+5. A large await result stored on a module or in a store after the component unmounted. Signal: a write outside the component after unmount, or history accumulated on the module. Recommendation: do not write outside the component if the effect already cleaned up, and do not accumulate history on the module.
 
-Un `value={{...}}` nuevo en cada render no es finding.
+A new `value={{...}}` on every render is not a finding.
 
-## Evidencia
+## Evidence
 
-CONFIRMED solo con perfilador o contador citado: Chrome DevTools, comparando el heap tras unmount. PROBABLE con archivo y línea. Sin eso no hay finding.
+CONFIRMED only with a cited profiler or counter: Chrome DevTools, comparing the heap after unmount. PROBABLE with file and line. Without that, there is no finding.
 
-## Cierre
+## Close
 
-Hecho cuando cada antipatrón de esta lista tiene archivo y línea o queda marcado ausente.
+Done when every antipattern on this list has a file and a line, or is marked absent.

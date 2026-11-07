@@ -1,15 +1,15 @@
 ---
 name: memory-audit-react
 description: >-
-  Retención en React: effects sin cleanup, cachés de datos y objetos URL.
-  Cárgala al auditar memoria de componentes React.
+  Retention in React: effects without cleanup, data caches, and URL objects.
+  Load it when auditing memory in React components.
 ---
 
 # memory-audit-react (shim)
 
-**Fuente canónica (no dupliques los antipatrones aquí):** `.agents/skills/memory-audit-react/SKILL.md`
+**Canonical source (do not duplicate the antipatterns here):** `.agents/skills/memory-audit-react/SKILL.md`
 
-## Instrucciones
+## Instructions
 
-1. Lee ese SKILL.md canónico completo con la herramienta Read.
-2. Busca solo sus antipatrones. El JSON de salida lo dicta memory-audit-core.
+1. Read that canonical SKILL.md in full with the Read tool.
+2. Search only its antipatterns. The output JSON is dictated by memory-audit-core.

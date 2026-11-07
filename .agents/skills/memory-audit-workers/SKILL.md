@@ -1,32 +1,32 @@
 ---
 name: memory-audit-workers
 description: >-
-  Retención en workers y colas: payloads, prefetch y listeners.
-  Cárgala al auditar memoria de BullMQ, Celery, Hangfire, Channel o un cron.
+  Retention in workers and queues: payloads, prefetch, and listeners.
+  Load it when auditing memory in BullMQ, Celery, Hangfire, Channel, or a cron.
 ---
 
 # Memory audit — Workers
 
-Úsala junto con `memory-audit-core`. El informe JSON lo dicta el core. Esta skill solo aporta los antipatrones y la forma del parche.
+Use it together with `memory-audit-core`. The core dictates the JSON report. This skill only supplies the antipatterns and the shape of the patch.
 
-## Cuándo cuenta como cargada
+## When it counts as loaded
 
-Hecho cuando Discovery nombró una cola, un worker, `IHostedService`, Celery, Hangfire o un cron con su ruta, o cuando Apex_MemoryFixer ve esa tecnología en el hallazgo. Carga además la skill del runtime (`memory-audit-node`, `memory-audit-python`, `memory-audit-java` o `memory-audit-dotnet`) si el discovery la demuestra.
+Done when Discovery named a queue, a worker, `IHostedService`, Celery, Hangfire, or a cron with its path, or when Apex_MemoryFixer sees that technology in the finding. Also load the runtime skill (`memory-audit-node`, `memory-audit-python`, `memory-audit-java`, or `memory-audit-dotnet`) if discovery demonstrates it.
 
-## Antipatrones
+## Antipatterns
 
-1. Payload de un job fallido o completado guardado entero en un array o mapa del proceso. Señal: en BullMQ, `removeOnComplete`/`removeOnFail` ausentes y un listener que hace push de `job.data`. Recommendation: política de borrado con cuenta o edad, y no guardar job.data.
-2. Concurrencia o prefetch sin techo, de modo que el proceso materializa N payloads grandes a la vez. Señal: concurrency de BullMQ, `worker_prefetch_multiplier`, BasicQos prefetch 0, o Channel sin cota. Recommendation: techo de concurrencia y prefetch.
-3. Listener de completed/failed/message registrado al arrancar y cerrado sobre el buffer. Señal: sigue registrado en el shutdown. Recommendation: quitar el listener al cerrar.
-4. Scheduler o `setInterval` que solapa ejecuciones. Señal: cada tick retiene su lote. Recommendation: no solapar; soltar el lote al terminar.
-5. Reintentos que guardan el error junto con el payload completo en una lista de módulo. Señal: la lista no tiene tope. Recommendation: guardar id y mensaje, con máximo de intentos.
+1. The payload of a failed or completed job kept whole in a process array or map. Signal: in BullMQ, `removeOnComplete`/`removeOnFail` are absent and a listener pushes `job.data`. Recommendation: a deletion policy by count or age, and do not store job.data.
+2. Concurrency or prefetch with no ceiling, so the process materializes N large payloads at once. Signal: BullMQ concurrency, `worker_prefetch_multiplier`, BasicQos prefetch 0, or an unbounded Channel. Recommendation: a concurrency ceiling and a prefetch cap.
+3. A completed/failed/message listener registered at startup and closed over the buffer. Signal: it is still registered at shutdown. Recommendation: remove the listener on close.
+4. A scheduler or `setInterval` that overlaps runs. Signal: each tick retains its batch. Recommendation: do not overlap; release the batch when it finishes.
+5. Retries that store the error together with the full payload in a module list. Signal: the list has no cap. Recommendation: store the id and the message, with a maximum number of attempts.
 
-Si el payload grande sale de un SELECT, recommendation = invocar a @Apex_SqlAuditor.
+If the large payload comes from a SELECT, recommendation = invoke @Apex_SqlAuditor.
 
-## Evidencia
+## Evidence
 
-CONFIRMED solo con el perfilador del runtime, o con RSS base contra una ráfaga de jobs. PROBABLE con archivo y línea. Sin eso no hay finding.
+CONFIRMED only with the runtime profiler, or with baseline RSS against a burst of jobs. PROBABLE with file and line. Without that, there is no finding.
 
-## Cierre
+## Close
 
-Hecho cuando cada antipatrón de esta lista tiene archivo y línea o queda marcado ausente.
+Done when every antipattern on this list has a file and a line, or is marked absent.

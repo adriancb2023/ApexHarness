@@ -1,24 +1,24 @@
-# `.cursor/` — Apex Harness instalado en Cursor
+# `.cursor/` — Apex Harness installed in Cursor
 
-| Pieza | Rol |
+| Piece | Role |
 | --- | --- |
 | `rules/apex-harness.mdc` | Orchestrator (`alwaysApply`) |
-| `rules/apex-roles.mdc` | Delega a subagentes `apex-*` |
-| `agents/apex-harness.md` | Subagente orchestrator (`/apex-harness`) |
-| `agents/apex-dev.md` | Implementación |
-| `agents/apex-bug.md` | Diagnóstico |
-| `agents/apex-verifier.md` | Verificación `readonly` |
-| `commands/harness.md` | `/harness <tarea>` |
+| `rules/apex-roles.mdc` | Delegates to `apex-*` subagents |
+| `agents/apex-harness.md` | Orchestrator subagent (`/apex-harness`) |
+| `agents/apex-dev.md` | Implementation |
+| `agents/apex-bug.md` | Diagnosis |
+| `agents/apex-verifier.md` | `readonly` verification |
+| `commands/harness.md` | `/harness <task>` |
 | `skills/harness-core/` | Shim → `.opencode/skills/harness-core/` |
 | `skills/<matt-id>/` | Skills for Real Engineers (gitignored) |
-| `mcp.json` | Engram local |
+| `mcp.json` | Local Engram |
 
-## Activar / reparar
+## Activate / repair
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\install-cursor-harness.ps1
 ```
 
-Luego **reinicia Cursor** (quit completo). Comprueba Settings → Tools & MCP → `engram` y que los subagentes `apex-*` aparezcan al delegar.
+Then **restart Cursor** (full quit). Check Settings → Tools & MCP → `engram` and that the `apex-*` subagents appear when delegating.
 
-Guía: `docs/CURSOR.md`.
+Guide: `docs/CURSOR.md`.

@@ -1,32 +1,32 @@
 ---
 name: memory-audit-node
 description: >-
-  Retención en Node: cachés de proceso, streams y listeners.
-  Cárgala al auditar memoria de un servidor o worker Node.
+  Retention in Node: process caches, streams, and listeners.
+  Load it when auditing memory in a Node server or worker.
 ---
 
 # Memory audit — Node
 
-Úsala junto con `memory-audit-core`. El informe JSON lo dicta el core. Esta skill solo aporta los antipatrones y la forma del parche.
+Use it together with `memory-audit-core`. The core dictates the JSON report. This skill only supplies the antipatterns and the shape of the patch.
 
-## Cuándo cuenta como cargada
+## When it counts as loaded
 
-Hecho cuando Discovery nombró un `package.json` con runtime node, o express/fastify/nest/koa, con su ruta, o cuando Apex_MemoryFixer ve esa tecnología en el hallazgo.
+Done when Discovery named a `package.json` with a node runtime, or express/fastify/nest/koa, with its path, or when Apex_MemoryFixer sees that technology in the finding.
 
-## Antipatrones
+## Antipatterns
 
-1. Map u objeto de módulo como caché de respuestas o sesiones, incluido `lru-cache` o memoizee. Señal: sin `max` o sin `maxAge`. Recommendation: max y TTL.
-2. Stream (`fs`, `http`, busboy). Señal: sin `destroy` o sin `pipeline` en el camino de error y de close. Recommendation: pipeline o destroy en el error y en el close.
-3. `emitter.on` en un cliente o en el request. Señal: no hay `off` al acabar. Recommendation: off en el finish o el close.
-4. El handler hace push de `req.body` o del buffer a un array de módulo. Señal: el body vive fuera del request. Recommendation: no retener el body fuera del request.
-5. `setInterval` de módulo que cierra sobre un buffer creciente. Señal: el intervalo sigue vivo en el shutdown. Recommendation: clearInterval al cerrar el servidor y no acumular el buffer.
+1. A module Map or object used as a cache of responses or sessions, including `lru-cache` or memoizee. Signal: no `max` or no `maxAge`. Recommendation: max and TTL.
+2. A stream (`fs`, `http`, busboy). Signal: no `destroy` and no `pipeline` on the error path and the close path. Recommendation: pipeline, or destroy on error and on close.
+3. `emitter.on` on a client or on the request. Signal: there is no `off` when it finishes. Recommendation: off on finish or close.
+4. The handler pushes `req.body` or the buffer onto a module array. Signal: the body lives outside the request. Recommendation: do not retain the body outside the request.
+5. A module `setInterval` closed over a growing buffer. Signal: the interval is still alive at shutdown. Recommendation: clearInterval when the server closes, and do not accumulate the buffer.
 
-Un Agent keep-alive no es finding por sí solo.
+An Agent keep-alive is not a finding by itself.
 
-## Evidencia
+## Evidence
 
-CONFIRMED solo con perfilador o contador citado: `node --inspect` o clinic heapprofiler, RSS base contra N peticiones. PROBABLE con archivo y línea. Sin eso no hay finding.
+CONFIRMED only with a cited profiler or counter: `node --inspect` or clinic heapprofiler, baseline RSS against N requests. PROBABLE with file and line. Without that, there is no finding.
 
-## Cierre
+## Close
 
-Hecho cuando cada antipatrón de esta lista tiene archivo y línea o queda marcado ausente.
+Done when every antipattern on this list has a file and a line, or is marked absent.

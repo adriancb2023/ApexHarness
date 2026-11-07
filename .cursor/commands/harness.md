@@ -1,13 +1,13 @@
 ---
-description: Ejecuta una tarea con el protocolo completo del Apex Harness
+description: Run a task through the full Apex Harness protocol
 ---
 
-Tarea: $ARGUMENTS
+Task: $ARGUMENTS
 
-Sigue el protocolo completo del Orchestrator Apex Harness en Cursor:
+Follow the full Apex Harness Orchestrator protocol in Cursor:
 
-1. Carga `harness-core` y clasifica (BUG / DEV / Answer).
-2. Gate de memoria Engram; skills Matt 2–4 con valor (anota descartadas).
-3. Delega implementación/diagnóstico según `.cursor/rules/apex-roles.mdc` con handoff compacto.
-4. Verifica con evidencia (comando + salida). Emite COMPLETED / FAILED / BLOCKED / UNVERIFIED.
-5. Actualiza `.harness/state.md`, métricas en `.harness/metrics.jsonl`, y memoria reutilizable al cierre.
+1. Load `harness-core` and classify (BUG / DEV / Answer).
+2. Engram memory gate; 2–4 Matt skills that add value (note the ones you drop).
+3. Delegate implementation or diagnosis per `.cursor/rules/apex-roles.mdc` with a compact handoff.
+4. Verify with evidence (command + output). Issue COMPLETED / FAILED / BLOCKED / UNVERIFIED.
+5. Update `.harness/state.md`, metrics in `.harness/metrics.jsonl`, and reusable memory on close.

@@ -1,15 +1,15 @@
 ---
 name: memory-audit-sql
 description: >-
-  Retención por SQL y ORMs: resultados enteros, N+1 y conexiones.
-  Cárgala al auditar memoria de consultas o de un ORM, en cualquier motor.
+  Retention from SQL and ORMs: full result sets, N+1, and connections.
+  Load it when auditing memory of queries or of an ORM, on any engine.
 ---
 
 # memory-audit-sql (shim)
 
-**Fuente canónica (no dupliques los antipatrones aquí):** `.agents/skills/memory-audit-sql/SKILL.md`
+**Canonical source (do not duplicate the antipatterns here):** `.agents/skills/memory-audit-sql/SKILL.md`
 
-## Instrucciones
+## Instructions
 
-1. Lee ese SKILL.md canónico completo con la herramienta Read.
-2. Busca solo sus antipatrones. El JSON de salida lo dicta memory-audit-core.
+1. Read that canonical SKILL.md in full with the Read tool.
+2. Search only its antipatterns. The output JSON is dictated by memory-audit-core.

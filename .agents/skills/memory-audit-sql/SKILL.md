@@ -1,32 +1,32 @@
 ---
 name: memory-audit-sql
 description: >-
-  Retención por SQL y ORMs: resultados enteros, N+1 y conexiones.
-  Cárgala al auditar memoria de consultas o de un ORM, en cualquier motor.
+  Retention from SQL and ORMs: full result sets, N+1, and connections.
+  Load it when auditing memory of queries or of an ORM, on any engine.
 ---
 
 # Memory audit — SQL
 
-Úsala junto con `memory-audit-core`. El informe JSON lo dicta el core. Esta skill solo aporta los antipatrones y la forma del parche.
+Use it together with `memory-audit-core`. The core dictates the JSON report. This skill only supplies the antipatterns and the shape of the patch.
 
-## Cuándo cuenta como cargada
+## When it counts as loaded
 
-Hecho cuando Discovery nombró SQL embebido, un repositorio o una dependencia de ORM/driver con su ruta, o cuando Apex_MemoryFixer ve esa tecnología en el hallazgo.
+Done when Discovery named embedded SQL, a repository, or an ORM/driver dependency with its path, or when Apex_MemoryFixer sees that technology in the finding.
 
-## Antipatrones
+## Antipatterns
 
-1. `SELECT *` o entidad completa de una tabla grande. Señal: sin límite, keyset ni cursor, y trae columnas que el llamador no usa. Recommendation: columnas explícitas y límite o cursor.
-2. `fetchall`, `ToList` o `getResultList` de un resultado grande. Señal: materializa el resultado en vez de stream o página. Recommendation: stream o página.
-3. Conexión, cursor o reader que no vuelve al pool. Señal: sin close, sin `using`, sin `with`, o sesión de ORM viva fuera del request. Recommendation: devolverla en `finally`; sesión por request.
-4. N+1. Señal: query o lazy load dentro de un bucle que instancia un modelo por fila. Recommendation: una query en lote o un join.
-5. Identity map o sesión de ORM guardada en un singleton. Señal: cada entidad leída vive el proceso. Recommendation: sesión por request, no singleton.
+1. `SELECT *` or a full entity from a large table. Signal: no limit, keyset, or cursor, and it brings columns the caller does not use. Recommendation: explicit columns and a limit or cursor.
+2. `fetchall`, `ToList`, or `getResultList` of a large result. Signal: it materializes the result instead of streaming or paging. Recommendation: stream or page.
+3. A connection, cursor, or reader that never returns to the pool. Signal: no close, no `using`, no `with`, or an ORM session that lives outside the request. Recommendation: return it in `finally`; a session per request.
+4. N+1. Signal: a query or lazy load inside a loop that instantiates one model per row. Recommendation: one batched query or a join.
+5. An identity map or ORM session stored on a singleton. Signal: every entity that was read lives for the process. Recommendation: a session per request, not a singleton.
 
-Si el motor es PostgreSQL, carga también memory-audit-postgresql. No mires el frontend.
+If the engine is PostgreSQL, also load memory-audit-postgresql. Do not look at the frontend.
 
-## Evidencia
+## Evidence
 
-CONFIRMED solo con perfilador o contador citado: contador de filas y RSS del proceso antes y después de la consulta. Si no hay runtime, PROBABLE con archivo y línea. Sin archivo y línea no hay finding.
+CONFIRMED only with a cited profiler or counter: row count and process RSS before and after the query. If there is no runtime, PROBABLE with file and line. Without file and line there is no finding.
 
-## Cierre
+## Close
 
-Hecho cuando cada antipatrón de esta lista tiene archivo y línea o queda marcado ausente.
+Done when every antipattern on this list has a file and a line, or is marked absent.

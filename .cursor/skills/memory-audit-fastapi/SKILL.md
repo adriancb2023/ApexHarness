@@ -1,15 +1,15 @@
 ---
 name: memory-audit-fastapi
 description: >-
-  Retención en FastAPI: Depends, background tasks y estado de app.
-  Cárgala al auditar memoria de una app FastAPI. Carga también memory-audit-python.
+  Retention in FastAPI: Depends, background tasks, and app state.
+  Load it when auditing memory in a FastAPI app. Also load memory-audit-python.
 ---
 
 # memory-audit-fastapi (shim)
 
-**Fuente canónica (no dupliques los antipatrones aquí):** `.agents/skills/memory-audit-fastapi/SKILL.md`
+**Canonical source (do not duplicate the antipatterns here):** `.agents/skills/memory-audit-fastapi/SKILL.md`
 
-## Instrucciones
+## Instructions
 
-1. Lee ese SKILL.md canónico completo con la herramienta Read.
-2. Busca solo sus antipatrones. El JSON de salida lo dicta memory-audit-core.
+1. Read that canonical SKILL.md in full with the Read tool.
+2. Search only its antipatterns. The output JSON is dictated by memory-audit-core.

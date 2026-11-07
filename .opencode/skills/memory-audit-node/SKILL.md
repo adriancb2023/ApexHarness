@@ -1,15 +1,15 @@
 ---
 name: memory-audit-node
 description: >-
-  Retención en Node: cachés de proceso, streams y listeners.
-  Cárgala al auditar memoria de un servidor o worker Node.
+  Retention in Node: process caches, streams, and listeners.
+  Load it when auditing memory in a Node server or worker.
 ---
 
 # memory-audit-node (shim)
 
-**Fuente canónica (no dupliques los antipatrones aquí):** `.agents/skills/memory-audit-node/SKILL.md`
+**Canonical source (do not duplicate the antipatterns here):** `.agents/skills/memory-audit-node/SKILL.md`
 
-## Instrucciones
+## Instructions
 
-1. Lee ese SKILL.md canónico completo con la herramienta Read.
-2. Busca solo sus antipatrones. El JSON de salida lo dicta memory-audit-core.
+1. Read that canonical SKILL.md in full with the Read tool.
+2. Search only its antipatterns. The output JSON is dictated by memory-audit-core.

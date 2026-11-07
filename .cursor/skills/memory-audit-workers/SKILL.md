@@ -1,15 +1,15 @@
 ---
 name: memory-audit-workers
 description: >-
-  Retención en workers y colas: payloads, prefetch y listeners.
-  Cárgala al auditar memoria de BullMQ, Celery, Hangfire, Channel o un cron.
+  Retention in workers and queues: payloads, prefetch, and listeners.
+  Load it when auditing memory in BullMQ, Celery, Hangfire, Channel, or a cron.
 ---
 
 # memory-audit-workers (shim)
 
-**Fuente canónica (no dupliques los antipatrones aquí):** `.agents/skills/memory-audit-workers/SKILL.md`
+**Canonical source (do not duplicate the antipatterns here):** `.agents/skills/memory-audit-workers/SKILL.md`
 
-## Instrucciones
+## Instructions
 
-1. Lee ese SKILL.md canónico completo con la herramienta Read.
-2. Busca solo sus antipatrones. El JSON de salida lo dicta memory-audit-core.
+1. Read that canonical SKILL.md in full with the Read tool.
+2. Search only its antipatterns. The output JSON is dictated by memory-audit-core.

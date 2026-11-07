@@ -1,15 +1,15 @@
 ---
 name: memory-audit-js
 description: >-
-  Retención en JavaScript y TypeScript: cierres, Map sin tope, timers.
-  Cárgala al auditar memoria de código JS o TS, en navegador o en servidor.
+  Retention in JavaScript and TypeScript: closures, unbounded Map, timers.
+  Load it when auditing memory in JS or TS code, in the browser or on the server.
 ---
 
 # memory-audit-js (shim)
 
-**Fuente canónica (no dupliques los antipatrones aquí):** `.agents/skills/memory-audit-js/SKILL.md`
+**Canonical source (do not duplicate the antipatterns here):** `.agents/skills/memory-audit-js/SKILL.md`
 
-## Instrucciones
+## Instructions
 
-1. Lee ese SKILL.md canónico completo con la herramienta Read.
-2. Busca solo sus antipatrones. El JSON de salida lo dicta memory-audit-core.
+1. Read that canonical SKILL.md in full with the Read tool.
+2. Search only its antipatterns. The output JSON is dictated by memory-audit-core.

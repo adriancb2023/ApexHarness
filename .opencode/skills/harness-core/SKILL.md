@@ -1,263 +1,263 @@
 ---
 name: harness-core
-description: Core del Engineering Harness — tablas de clasificación de tareas, routing de skills y agentes, reglas de memoria Engram, máquina de estados, handoffs, verificación y Definition of Done. Cárgalo al empezar cualquier tarea y aplica sus tablas sin re-decidir.
+description: Core of the Engineering Harness — task classification tables, skill and agent routing, Engram memory rules, state machine, handoffs, verification, and Definition of Done. Load it at the start of any task and apply its tables without re-deciding.
 ---
 
 # Harness Core
 
-Fuente de verdad del pipeline. Si una decisión está aquí, aplícala tal cual y
-anota solo el porqué en una línea. Metadatos completos de cada skill (triggers,
-requires, produces, verificación, cuándo NO cargarla): `references/registry.md`,
-solo cuando tengas duda sobre una skill concreta.
+Source of truth for the pipeline. If a decision is here, apply it as written and
+note only the why in one line. Full metadata for each skill (triggers,
+requires, produces, verification, when NOT to load it): `references/registry.md`,
+only when you are unsure about a specific skill.
 
-Reglas de tokens: este documento es el presupuesto orientativo completo (~2k
-tokens); no lo vuelvas a imprimir en el chat; cita secciones por §.
+Token rules: this document is the whole orientation budget (~2k
+tokens); do not print it again in the chat; cite sections by §.
 
-## 1. Clasificación de tareas (determinista)
+## 1. Task classification (deterministic)
 
-Escanea el texto de la tarea con la tabla; primera coincidencia gana.
+Scan the task text with the table; the first match wins.
 
-| Gatillos | Agente / pipeline |
+| Triggers | Agent / pipeline |
 | --- | --- |
-| El usuario nombra un agente (`apex-dev`, `apex-bug`, `apex-verifier`, `apex-api-auditor`, `apex-frontend-auditor`, `apex-sql-auditor`, `apex-worker-auditor`, `apex-memory-fixer`, o el id `Apex_*` equivalente) | **Ese agente, directo.** Sin clasificar, sin Engram, sin `.harness/state.md`, sin router de skills, sin verifier. El mensaje del usuario es el encargo. `/harness` o «haz el harness» no entra aquí: sigue el pipeline |
-| `bug`, `error`, `crash`, `exception`, `fails`, `broken`, `regression`, "no funciona", "falla", "se queda", "no carga", "rompe", "petazo", "stack trace", "se cuelga" | **BUG** (subagente Apex_Bug) |
-| `implement`, `add`, `create`, `build`, `feature`, `develop`, `refactor`, `migrate`, "añade", "agrega", "implementa", "crea", "nueva versión de", "soporte para" | **DEV** (subagente Apex_Dev) |
-| Análisis, explicación, exploración, preguntas, planes, revisión de un punto concreto | **Answer directo** del Orchestrator, sin spawn |
+| The user names an agent (`apex-dev`, `apex-bug`, `apex-verifier`, `apex-api-auditor`, `apex-frontend-auditor`, `apex-sql-auditor`, `apex-worker-auditor`, `apex-memory-fixer`, or the equivalent `Apex_*` id) | **That agent, directly.** Do not classify, do not query Engram, do not write `.harness/state.md`, do not run the skill router, do not verify. The user's message is the assignment. `/harness` or "run the harness" / "haz el harness" does not match this row: follow the pipeline |
+| `bug`, `error`, `crash`, `exception`, `fails`, `broken`, `regression`, "no funciona", "falla", "se queda", "no carga", "rompe", "petazo", "stack trace", "se cuelga", "doesn't work", "hangs", "won't load" | **BUG** (subagent Apex_Bug) |
+| `implement`, `add`, `create`, `build`, `feature`, `develop`, `refactor`, `migrate`, "añade", "agrega", "implementa", "crea", "nueva versión de", "soporte para" | **DEV** (subagent Apex_Dev) |
+| Analysis, explanation, exploration, questions, plans, review of one specific point | **Direct answer** from the Orchestrator, no spawn |
 
-Ambigua → razona el porqué en una línea y elige; sigue en duda → pipeline estándar
-(§2). Si la tabla no resolvió y usaste el modelo para decidir, anótalo en state.md.
+Ambiguous → reason the why in one line and choose; still unsure → standard pipeline
+(§2). If the table did not settle it and you used the model to decide, note it in state.md.
 
-Tareas no-código (docs, config del harness, meta-tareas del propio repo) se
-tratan como DEV/Answer según su forma. Si la tarea toca el propio harness, recuerda:
-el Orchestrator solo puede editar `.harness/**`; los cambios al resto de archivos
-los ejecuta Apex_Dev (el agente con permiso de edit real).
+Non-code tasks (docs, harness config, meta-tasks of this repo) are
+treated as DEV or Answer according to their shape. If the task touches the harness itself, remember:
+the Orchestrator may edit only `.harness/**`; changes to every other file
+are executed by Apex_Dev (the agent with real edit permission).
 
-## 2. Complejidad → variante de pipeline
+## 2. Complexity → pipeline variant
 
-| Nivel | Señal | Pipeline |
+| Level | Signal | Pipeline |
 | --- | --- | --- |
-| Trivial | ≤1 archivo, ≤~30 LOC, sin interfaz nueva ni dominio nuevo | memory (gate) → Apex_Dev → verify leve (salida del implementador) → memory-write → DONE |
-| Estándar | 2–4 archivos o tests afectados | classify → memory → route → Apex_Dev (+`tdd`) → `code-review` → Apex_Verifier → memory-write → DONE |
-| Compleja | dominio nuevo, interfaz nueva, multi-sistema, incertidumbre grande | research (si hay incertidumbre factual) → grill-with-docs → to-spec → to-tickets → implement-spec por ticket → tdd → code-review → Apex_Verifier → retro (opcional) → memory-write → DONE |
+| Trivial | ≤1 file, ≤~30 LOC, no new interface and no new domain | memory (gate) → Apex_Dev → light verify (implementer's output) → memory-write → DONE |
+| Standard | 2–4 files or tests affected | classify → memory → route → Apex_Dev (+`tdd`) → `code-review` → Apex_Verifier → memory-write → DONE |
+| Complex | new domain, new interface, multi-system, large uncertainty | research (if there is factual uncertainty) → grill-with-docs → to-spec → to-tickets → implement-spec per ticket → tdd → code-review → Apex_Verifier → retro (optional) → memory-write → DONE |
 
-Cada paso opcional (research, grill, spec, tickets, retro) se incluye solo con
-valor: cuando lo saltes, una línea dice por qué. El conteo típico es 2–4 skills
-por tarea; un número mayor exige justificación explícita.
+Each optional step (research, grill, spec, tickets, retro) is included only when it
+adds value: when you skip it, one line says why. The typical count is 2–4 skills
+per task; a higher number needs an explicit justification.
 
 ## 3. Memory Router (Engram)
 
-**Gate (antes de buscar, coste 0):** ¿la tarea podría repetir trabajo previo,
-heredar una decisión, o tocar un bug/convención ya conocido? No → cero búsquedas;
-anota "memory skip: gate no aplicable". Sí → cadena:
+**Gate (before searching, cost 0):** could the task repeat prior work,
+inherit a decision, or touch a bug or convention already known? No → zero searches;
+note "memory skip: gate does not apply". Yes → chain:
 
-1. `mem_context` — barato, una vez.
-2. `mem_search` — keywords de tema/archivos (máx 2 búsquedas; scope de proyecto
-   por defecto: otros proyectos quedan excluidos automáticamente).
-3. `mem_get_observation` — solo para los 1–2 resultados que inyectarás.
+1. `mem_context` — cheap, once.
+2. `mem_search` — topic/file keywords (max 2 searches; project scope
+   by default: other projects are excluded automatically).
+3. `mem_get_observation` — only for the 1–2 results you will inject.
 
-**Cap:** ≤5 observaciones relevantes en contexto. Descarta observaciones
-triviales/otro-área/sin relación con la tarea.
+**Cap:** ≤5 relevant observations in context. Drop observations that are
+trivial, from another area, or unrelated to the task.
 
-| Tipo de memoria | Regla |
+| Memory type | Rule |
 | --- | --- |
-| decision / architecture | Aplicable a la tarea → inyecta. Si contradice el código: investiga; git/código manda; no la cambies silenciosamente |
-| bugfix | Área similar → inyecta causa+fix. Si no → descarta |
-| pattern / config | Inyecta si toca el área |
-| Progreso | Punto de partida; git/código manda si difieren |
-| `learning` con título `[HYPOTHESIS]` | Nunca como hecho; úsala solo para señalar incertidumbre |
+| decision / architecture | Applies to the task → inject. If it contradicts the code: investigate; git/code wins; do not change it silently |
+| bugfix | Similar area → inject cause+fix. Otherwise → drop |
+| pattern / config | Inject if it touches the area |
+| Progress | A starting point; git/code wins if they differ |
+| `learning` titled `[HYPOTHESIS]` | Never as fact; use it only to mark uncertainty |
 
-**Contradicciones:** tests/evidencia > código actual > Engram > suposiciones del
-agente. Si Engram difiere del código: investiga y resuelve, y luego registra el
-veredicto (§9). Nunca adoptes una memoria sin verificarla contra el código actual.
+**Contradictions:** tests/evidence > current code > Engram > the agent's
+assumptions. If Engram differs from the code: investigate and resolve, then record the
+verdict (§9). Never adopt a memory without checking it against the current code.
 
-## 4. Contexto mínimo
+## 4. Minimum context
 
-Nunca el repo entero. Orden: memoria relevante → archivos/símbolos implicados
-(lectura dirigida / grep) → tests alrededor → implementación. Si con 3 archivos se
-responde, no leas 10. Skills y contextos fuera de la tarea no se cargan.
+Never the whole repo. Order: relevant memory → files/symbols involved
+(directed read / grep) → nearby tests → implementation. If 3 files
+answer it, do not read 10. Skills and context outside the task are not loaded.
 
 ## 5. Skill Router
 
-Regla: `¿esta skill aporta valor a ESTA tarea?` no → no se carga (anótalo).
-Detalles por skill: `references/registry.md`.
+Rule: `does this skill add value to THIS task?` no → do not load it (note it).
+Per-skill details: `references/registry.md`.
 
-| Necesidad | Skill | Carga si | Skip si |
+| Need | Skill | Load if | Skip if |
 | --- | --- | --- | --- |
-| Bug | `diagnosing-bugs` | SIEMPRE en pipeline BUG | — |
-| Implementar | `tdd` | slice testable posible | no hay runtime/tests o es doc/config |
-| Handoff con spec/ticket | `implement-spec` | pipeline viene de to-spec/to-tickets | spec informal |
-| Cambio grande | `code-review` | >1 archivo o feature completa | cambio de ≤30 LOC bien cubierto por verify |
-| Interfaz/arquitectura | `codebase-design` | cambia forma/interfaz de módulo | solo retocar |
-| Conceptos de dominio | `domain-modeling` | conceptos nuevos/ambiguos | dominio conocido y estable |
-| Incertidumbre factual | `research` | tecnología/dependencia/API desconocida que BLOQUEA | el dato está en código/docs locales |
-| Compleja y ambigua | `grill-with-docs` | pipeline compleja | trivial/estándar |
-| Compleja multi-paso | `to-spec` → `to-tickets` | se va a implementar en varios tickets | no caben tickets |
-| Cierre de compleja | `retro` | aprendizaje de proceso relevante | estándar/trivial |
+| Bug | `diagnosing-bugs` | ALWAYS on the BUG pipeline | — |
+| Implement | `tdd` | a testable slice is possible | there is no runtime/tests, or it is docs/config |
+| Handoff with spec/ticket | `implement-spec` | the pipeline comes from to-spec/to-tickets | the spec is informal |
+| Large change | `code-review` | >1 file or a complete feature | a ≤30 LOC change already covered by verify |
+| Interface/architecture | `codebase-design` | it changes a module's shape or interface | a touch-up only |
+| Domain concepts | `domain-modeling` | new or ambiguous concepts | the domain is known and stable |
+| Factual uncertainty | `research` | an unknown technology/dependency/API BLOCKS the task | the fact is in local code or docs |
+| Complex and ambiguous | `grill-with-docs` | the pipeline is complex | trivial/standard |
+| Complex multi-step | `to-spec` → `to-tickets` | it will be implemented as several tickets | tickets do not fit |
+| Close of a complex task | `retro` | a relevant process lesson | standard/trivial |
 
-Nota: `implement`, `to-spec`, `to-tickets`, `retro`, `triage`, `wayfinder`,
-`grill-with-docs` son user-invoked (`disable-model-invocation: true`): NO aparecen
-anunciadas; llámalas por ID exacto con la herramienta `skill` cuando el routing las
-elija. Las model-invoked (`tdd`, `code-review`, `diagnosing-bugs`, `research`,
-`codebase-design`, `domain-modeling`, `prototype`, `pr`) se anuncian solas, pero la
-decisión de cargarlas es igual de explícita.
+Note: `implement`, `to-spec`, `to-tickets`, `retro`, `triage`, `wayfinder`,
+`grill-with-docs` are user-invoked (`disable-model-invocation: true`): they are NOT
+advertised; call them by exact ID with the `skill` tool when routing selects
+them. The model-invoked ones (`tdd`, `code-review`, `diagnosing-bugs`, `research`,
+`codebase-design`, `domain-modeling`, `prototype`, `pr`) advertise themselves, but the
+decision to load them is just as explicit.
 
-## 6. Máquina de estados y artefactos
+## 6. State machine and artifacts
 
-Estados: `RECEIVED CLASSIFYING MEMORY_LOOKUP PLANNING RESEARCHING IMPLEMENTING
+States: `RECEIVED CLASSIFYING MEMORY_LOOKUP PLANNING RESEARCHING IMPLEMENTING
 DIAGNOSING VERIFYING REVIEWING REPAIRING COMPLETED FAILED BLOCKED UNVERIFIED`.
 
-`.harness/state.md` (≤40 líneas; el Orchestrator actualiza en cada salto):
+`.harness/state.md` (≤40 lines; the Orchestrator updates it on every transition):
 
 ```markdown
 # Harness state — 2026-10-25 hh:mm
-task: <1 línea>
+task: <1 line>
 pipeline: dev | bug | answer
 state: VERIFYING (prev: IMPLEMENTING)
-selected: agent=Apex_Dev skills=[tdd, code-review] dropped=[research (dato local), grill (estándar)]
+selected: agent=Apex_Dev skills=[tdd, code-review] dropped=[research (local fact), grill (standard)]
 memory: gate=hit ids=[12, 34] injected=2 est_tokens=~600
 transitions:
-| hh:mm | IMPLEMENTING → VERIFYING | implementación terminada | evidence se va a Apex_Verifier |
+| hh:mm | IMPLEMENTING → VERIFYING | implementation finished | evidence goes to Apex_Verifier |
 ...
 ```
 
-Cada transición con from → to, reason, evidence y (si disponible) tokens. Los
-subagentes no escriben state.md; el Orchestrator es el único escritor.
+Every transition has from → to, reason, evidence, and (if available) tokens.
+Subagents do not write state.md; the Orchestrator is the only writer.
 
-## 7. Verificación y cache
+## 7. Verification and cache
 
-1. Evidencia: por cada check, comando ejecutado + salida (resumen). Nunca aserción.
-2. Verificación de no-trivial es independiente: la hace el subagente Apex_Verifier
-   (read-only por permisos). Trivial: la salida del implementador con comandos
-   adjuntos, revisada por el Orchestrator.
-3. Checks típicos: tests del área, suite completa, typecheck, lint, build,
-   reproducción del bug, `git diff`/`git log` (si hay git; si no: UNVERIFIED para
-   ese check concreto, no para la tarea).
-4. Cache (`.harness/cache.md`): `| check | comando | inputs (files+hash/mtime) |
-   result | ts |`. Un test que ya pasó sin cambios de código → no se repite.
-   Cualquier edit en los inputs → check invalidado.
+1. Evidence: for each check, the command that was run + output (summary). Never an assertion.
+2. Non-trivial verification is independent: the Apex_Verifier subagent does it
+   (read-only by permissions). Trivial: the implementer's output with commands
+   attached, reviewed by the Orchestrator.
+3. Typical checks: area tests, full suite, typecheck, lint, build,
+   bug reproduction, `git diff`/`git log` (if git exists; if not: UNVERIFIED for
+   that specific check, not for the task).
+4. Cache (`.harness/cache.md`): `| check | command | inputs (files+hash/mtime) |
+   result | ts |`. A test that already passed with no code changes → do not repeat it.
+   Any edit of the inputs → the check is invalidated.
 
-FAIL → REPAIRING (máx 2 ciclos; handoff con evidencia de lo malo) → re-verify SOLO
-lo invalidado. Pasado el límite: UNVERIFIED o BLOCKED con lo aprendido registrado.
+FAIL → REPAIRING (max 2 cycles; handoff with evidence of what is wrong) → re-verify ONLY
+what was invalidated. Past the limit: UNVERIFIED or BLOCKED with what was learned recorded.
 
-## 8. Handoff entre agentes (compacto; nunca la conversación entera)
+## 8. Handoff between agents (compact; never the whole conversation)
 
 ```markdown
 from: Apex_Harness | to: Apex_Dev | type: implement-request | 2026-10-25
-objetivo: <1–2 líneas>
-contexto: <archivos, símbolos, criterios; sin volcados>
-memory: [#12 decisión X, #34 bug Y con su fix]  (líneas exigidas)
-criteria: <qué debe demostrar Apex_Verifier>
+goal: <1–2 lines>
+context: <files, symbols, criteria; no dumps>
+memory: [#12 decision X, #34 bug Y with its fix]  (required lines)
+criteria: <what Apex_Verifier must demonstrate>
 relevantMemoryIds: [12, 34]
 ```
 
-Variantes: `repair-request` (con rootCause/evidence para Apex_Dev) y `verify-request`
-(para Apex_Verifier con la lista de checks). Si un resultado vuelve insuficiente, el
-siguiente handoff incluye solo el delta necesario.
+Variants: `repair-request` (with rootCause/evidence for Apex_Dev) and `verify-request`
+(for Apex_Verifier, with the check list). If a result comes back insufficient, the
+next handoff includes only the delta that is needed.
 
-## 9. Memory Writer (solo al cerrar; escritor único: Orchestrator)
+## 9. Memory Writer (only on close; only writer: Orchestrator)
 
 ```
-¿Hay conocimiento reutilizable? NO → no guardar (el silencio es válido)
-SÍ → ¿existe memoria similar del tema? SÍ → mem_save con el mismo topic_key (upsert) / mem_update con id
-                                   NO → mem_save nuevo
+Is there reusable knowledge? NO → do not save (silence is valid)
+YES → does similar memory on the topic exist? YES → mem_save with the same topic_key (upsert) / mem_update with id
+                                          NO → new mem_save
 ```
 
-**Guardar:** decisiones y su why; arquitectura establecida; causa raíz de bugs
-(qué era, fix, test, cómo reproducir en una línea); convenciones; config/entorno;
-hito de progreso (1 observación por fila); referencia a ficheros clave.
+**Save:** decisions and their why; established architecture; root cause of bugs
+(what it was, the fix, the test, how to reproduce in one line); conventions; config/environment;
+a progress milestone (1 observation per row); a reference to key files.
 
-**No guardar:** logs, diffs completos, código completo, conversaciones, pasos
-triviales, pensamientos internos, cada comando ejecutado.
+**Do not save:** logs, full diffs, full code, conversations, trivial
+steps, internal thoughts, every command that was run.
 
-Formato nativo: `title` corta buscable; `type` topical (decision / architecture /
-bugfix / pattern / config / discovery / learning); `content` con
-**What / Why / Where / Learned**; `topic_key` estable (si dudas:
-`mem_suggest_topic_key`). Hipótesis pendiente → título con prefijo `[HYPOTHESIS]`.
+Native format: a short searchable `title`; topical `type` (decision / architecture /
+bugfix / pattern / config / discovery / learning); `content` with
+**What / Why / Where / Learned**; a stable `topic_key` (if unsure:
+`mem_suggest_topic_key`). A pending hypothesis → title prefixed with `[HYPOTHESIS]`.
 
-Post-save: si la respuesta trae `judgment_required`, itera `candidates[]` y llama
-`mem_judge` con el `judgment_id` de CADA candidato. `supersedes`/`conflicts_with`
-sobre decision/architecture/policy → preguntar al usuario antes; el resto se
-resuelve en silencio. Nunca duplicar memoria: antes de crear, busca tema; el
-criterio default es upsert.
+Post-save: if the response brings `judgment_required`, iterate `candidates[]` and call
+`mem_judge` with the `judgment_id` of EACH candidate. `supersedes`/`conflicts_with`
+on decision/architecture/policy → ask the user first; the rest is
+resolved silently. Never duplicate memory: before creating, search the topic; the
+default criterion is upsert.
 
-Cierre de sesión: `mem_session_summary` (Goal / Instructions / Discoveries /
-Accomplished / Next Steps / Relevant Files — formato del plugin Engram).
+Session close: `mem_session_summary` (Goal / Instructions / Discoveries /
+Accomplished / Next Steps / Relevant Files — the Engram plugin format).
 
-## 10. Métricas (`.harness/metrics.jsonl`)
+## 10. Metrics (`.harness/metrics.jsonl`)
 
-Una línea JSON por tarea al cerrar:
+One JSON line per task on close:
 
 ```json
 {"ts":"2026-10-25T10:34:31","task":"...","pipeline":"dev","agents":["Apex_Dev","Apex_Verifier"],
- "skillsUsed":["tdd","code-review"],"skillsSkipped":["research (dato local)"],
+ "skillsUsed":["tdd","code-review"],"skillsSkipped":["research (local fact)"],
  "memoryQueries":1,"memoryResults":2,"contextFiles":3,"verification":{"checks":3,"pass":3},
  "retryCount":0,"finalState":"COMPLETED","tokensTui":null}
 ```
 
-`tokensTui`: el número real del panel de tokens del TUI (lo anota el Orchestrator
-si lo tiene a mano; `null` si no). Para responder "¿Engram ahorra tokens?":
-ejecuta la misma tarea dos veces (una con lookup de memoria, otra marcando
-"memory skip") en sesiones limpias y compara tokens/steps/reintentos de ambas líneas
-del JSONL. Protocolo completo: `docs/METRICS.md`.
+`tokensTui`: the real number from the TUI token panel (the Orchestrator notes it
+if it is at hand; `null` if not). To answer "does Engram save tokens?":
+run the same task twice (once with a memory lookup, once marking
+"memory skip") in clean sessions and compare tokens/steps/retries of both lines
+in the JSONL. Full protocol: `docs/METRICS.md`.
 
-## 11. Anti-patterns (abortar si te pilla)
+## 11. Anti-patterns (abort if you catch yourself)
 
-1. Prompt gigante: todas las skills + todo el repo + todo Engram a la vez.
-2. Pipeline rígido: ejecutar research/grill/spec/tickets cuando la tarea es trivial.
-3. `mem_search` "por si acaso" sin gate.
-4. PASS por aserción del implementador sin comando ejecutado.
-5. Reescribir/repasando trabajo ya verificado cuando nada cambió.
-6. Un agente que hace todo (planifica, codifica, diagnostica, revisa) — usa los roles.
+1. Giant prompt: every skill + the whole repo + all of Engram at once.
+2. Rigid pipeline: running research/grill/spec/tickets when the task is trivial.
+3. `mem_search` "just in case" with no gate.
+4. PASS from the implementer's assertion with no command executed.
+5. Rewriting or re-checking work that was already verified when nothing changed.
+6. One agent that does everything (plans, codes, diagnoses, reviews) — use the roles.
 
-## 12. Aislamiento e instalación: solo un harness manda
+## 12. Isolation and install: only one harness is in charge
 
-En cualquier repo con este harness instalado, el único pipeline activo es el de
-`Apex_*`. Instalación en **dos pasos**:
+In any repo with this harness installed, the only active pipeline is
+`Apex_*`. Install in **two steps**:
 
-### Paso 1 — harness (config-only; se copia a mano o se clona)
+### Step 1 — harness (config-only; copy by hand or clone)
 
-| Pieza | Destino (por defecto: proyecto) | Conflicto con harness/agentes previos |
+| Piece | Destination (default: project) | Conflict with a previous harness/agents |
 | --- | --- | --- |
-| 4 ficheros `Apex_*.md` | `<repo>/.opencode/agents/` | Los IDs `Apex_*` no chocan con agentes ajenos: coexisten y no se invocan entre sí. Si el repo ya tenía `harness.md`/`dev.md`/`bug.md`/`verifier.md` SIN prefijo (otro harness), desactívalos: borra/renombra esos ficheros o añade `disable: true` para cada uno en `opencode.json` (`"agent": {"harness": {"disable": true}, ...}`) |
-| `harness-core` | `<repo>/.opencode/skills/harness-core/` | Los IDs de skill deben ser únicos entre ubicaciones: si ya existe `harness-core` en `~/.config/opencode/skills/` (versión vieja), bórrala del global |
-| comando `/harness` | `<repo>/.opencode/commands/harness.md` | Si existía otro comando con ese ID, lo reemplaza (mismo path) |
-| `opencode.json` | `<repo>/opencode.json` — MERGE, no sustituir | Añade `default_agent: "Apex_Harness"`, `policies[]` hard-deny y `permission: {"git clean -d*": "ask"}`; conserva lo demás del repo |
-| reglas | Si el repo ya tiene `AGENTS.md`: añade un bloque `## Harness (Apex_)` al final (no lo sustituyas). Alternativa sin tocar AGENTS.md: en `opencode.json`, `instructions: [".opencode/skills/harness-core/SKILL.md"]` |
-| Cursor | `<repo>/.cursor/` (rules `apex-*`, commands/harness, skills/harness-core shim, mcp.json) | Una sola pareja always-apply del harness; borra reglas de un harness anterior. Detalle: `docs/CURSOR.md` |
+| `Apex_*.md` files | `<repo>/.opencode/agents/` | `Apex_*` IDs do not clash with foreign agents: they coexist and do not invoke each other. If the repo already had `harness.md`/`dev.md`/`bug.md`/`verifier.md` with NO prefix (another harness), disable them: delete/rename those files or add `disable: true` for each in `opencode.json` (`"agent": {"harness": {"disable": true}, ...}`) |
+| `harness-core` | `<repo>/.opencode/skills/harness-core/` | Skill IDs must be unique across locations: if `harness-core` already exists in `~/.config/opencode/skills/` (an old version), delete the global one |
+| `/harness` command | `<repo>/.opencode/commands/harness.md` | If another command with that ID existed, this replaces it (same path) |
+| `opencode.json` | `<repo>/opencode.json` — MERGE, do not replace | Add `default_agent: "Apex_Harness"`, hard-deny `policies[]`, and ask on `git clean -d*`; keep the rest of the repo |
+| rules | If the repo already has `AGENTS.md`: append a `## Harness (Apex_)` block at the end (do not replace it). Alternative without touching AGENTS.md: in `opencode.json`, `instructions: [".opencode/skills/harness-core/SKILL.md"]` |
+| Cursor | `<repo>/.cursor/` (rules `apex-*`, commands/harness, skills/harness-core shim, mcp.json) | One always-apply pair for the harness; delete rules from a previous harness. Detail: `docs/CURSOR.md` |
 
-### Paso 2 — Skills for Real Engineers (obligatorio; NO van en este repo)
+### Step 2 — Skills for Real Engineers (required; they do NOT live in this repo)
 
 ```bash
 npx skills@latest add mattpocock/skills -a opencode -a cursor -y --copy
-# sin git (copia desde ~/.config/opencode/skills):
+# without git (copy from ~/.config/opencode/skills):
 pwsh ./scripts/bootstrap-matt-skills.ps1 -FromOpenCodeGlobal
 ```
 
-Instala las ~27 skills (`tdd`, `code-review`, `diagnosing-bugs`, …) en el
-**proyecto**: `<repo>/.opencode/skills/` y `<repo>/.cursor/skills/` (también puede
-quedar copia global en `~/.config/opencode/skills/`). Sin este paso el router de
-§5 apunta a IDs inexistentes. Requiere `git` para el instalador oficial. No
-versionar las skills Matt en git (ver `.gitignore`; solo se versiona
-`harness-core`).
+Installs the ~27 skills (`tdd`, `code-review`, `diagnosing-bugs`, …) into the
+**project**: `<repo>/.opencode/skills/` and `<repo>/.cursor/skills/` (a global
+copy may also remain in `~/.config/opencode/skills/`). Without this step the §5
+router points at IDs that do not exist. Requires `git` for the official installer. Do not
+version Matt skills in git (see `.gitignore`; only `harness-core` is versioned).
 
 
-Garantías duras (aplicadas por el HOST, no por prompts):
+Hard guarantees (enforced by the HOST, not by prompts):
 
-1. `policies[]` hard-deny se aplica en cualquier capa; ninguna config o agentes
-   Ranking pueden saltarla (docs: OpenCode 2).
-2. `subagent` de Apex_Harness: deny `*` → allow SOLO `Apex_Dev`/`Apex_Bug`/
-   `Apex_Verifier`. Con `deny`, los demás agentes (p. ej. un `apex` global,
-   `build`, `general`) **desaparecen del catálogo de spawn** del Orchestrator:
-   no hay ruta de escape por la que se cuele otro harness dentro de la pipeline.
-3. `default_agent` a nivel proyecto pisa el global → la sesión abre SIEMPRE como
-   Apex_Harness aunque el global diga otra cosa; y si el global no existe, el
-   proyecto lo fija.
-4. Nombres namespaced (`Apex_*`, `harness-core`, `/harness`) → cero colisión
-   accidental con agentes/skills de Matt Pocock o de terceros.
+1. Hard-deny `policies[]` apply at every layer; no config or agent
+   ranking can bypass them (docs: OpenCode 2).
+2. Apex_Harness `subagent`: deny `*` → allow `Apex_Dev` / `Apex_Bug` /
+   `Apex_Verifier` and the memory squad (`Apex_ApiAuditor`, `Apex_FrontendAuditor`,
+   `Apex_SqlAuditor`, `Apex_WorkerAuditor`, `Apex_MemoryFixer`). With `deny`, other agents
+   (for example a global `apex`, `build`, `general`) **disappear from the Orchestrator's
+   spawn catalog**: there is no escape hatch for another harness to enter the pipeline.
+3. A project-level `default_agent` overrides the global → the session ALWAYS opens as
+   Apex_Harness even if the global says otherwise; and if the global does not exist, the
+   project sets it.
+4. Namespaced names (`Apex_*`, `harness-core`, `/harness`) → no accidental
+   collision with Matt Pocock skills or third-party agents.
 
-Instalación global (todos los repos): mismo contenido en `~/.config/opencode/`
-(agents/skills/commands) y `default_agent` + `policies[]` en el config global.
-Un proyecto que defina su propio `default_agent` pisará el global (decisión
-consciente, nuestra config se respeta en el resto de keys). Los 27 skills de
-Matt son el SUELO compartido (paso 2; no se duplican dentro del harness
-namespaced). Cursor: `docs/CURSOR.md`.
+Global install (every repo): the same content in `~/.config/opencode/`
+(agents/skills/commands) and `default_agent` + `policies[]` in the global config.
+A project that defines its own `default_agent` overrides the global (a conscious
+decision; our config is still respected on the other keys). The 27 Matt skills are
+the shared FLOOR (step 2; they are not duplicated inside the namespaced
+harness). Cursor: `docs/CURSOR.md`.
