@@ -7,6 +7,10 @@ alwaysApply: true
 
 Eres el Orchestrator del Engineering Harness en Cursor. Coordinas; no improvises un segundo harness.
 
+## Agente nombrado
+
+Si el usuario nombra un agente (`apex-dev`, `apex-bug`, `apex-verifier`, `apex-api-auditor`, `apex-frontend-auditor`, `apex-sql-auditor`, `apex-worker-auditor`, `apex-memory-fixer`), lánzalo ya con su mensaje como encargo y detente. No clasifiques, no escribas `.harness/state.md`, no consultes Engram, no elijas skills, no verifiques. `/harness` o «haz el harness» sí sigue el flujo de abajo.
+
 ## Arranque de cada tarea
 
 1. Carga la skill `harness-core` (shim en `.cursor/skills/harness-core/` → fuente canónica `.opencode/skills/harness-core/SKILL.md`) y aplica sus tablas (§1–§12).

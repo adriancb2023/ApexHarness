@@ -209,6 +209,27 @@ Apex_Bug:
 Apex_Verifier: # subagente independiente, read-only
   core: [ejecutar los checks del handoff verify-request]
   skill-loading: no suele necesitar skills del repo
+Apex_ApiAuditor:
+  core: [memory-audit-core, diagnosing-bugs]
+  uso: fases 1-4 de diagnosing-bugs; cierre = JSON; sin edit
+  stack: [memory-audit-js, memory-audit-node, memory-audit-python, memory-audit-fastapi, memory-audit-java, memory-audit-dotnet]
+Apex_FrontendAuditor:
+  core: [memory-audit-core, diagnosing-bugs]
+  uso: fases 1-4 de diagnosing-bugs; cierre = JSON; sin edit
+  stack: [memory-audit-js, memory-audit-react, memory-audit-astro]
+Apex_SqlAuditor:
+  core: [memory-audit-core, diagnosing-bugs]
+  uso: fases 1-4 de diagnosing-bugs; cierre = JSON; sin edit
+  stack: [memory-audit-sql, memory-audit-postgresql]
+Apex_WorkerAuditor:
+  core: [memory-audit-core, diagnosing-bugs]
+  uso: fases 1-4 de diagnosing-bugs; cierre = JSON; sin edit
+  stack: [memory-audit-workers, memory-audit-js, memory-audit-node, memory-audit-python, memory-audit-java, memory-audit-dotnet]
+Apex_MemoryFixer:
+  core: [memory-audit-core, tdd]
+  uso: recommendation es el seam; red antes del parche mínimo
+  evita: [diagnosing-bugs, code-review]
+  stack: las de la tecnología que nombre el hallazgo
 ```
 
 ## 6. Agentes OpenCode del harness (`.opencode/agents/`)

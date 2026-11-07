@@ -19,6 +19,7 @@ Escanea el texto de la tarea con la tabla; primera coincidencia gana.
 
 | Gatillos | Agente / pipeline |
 | --- | --- |
+| El usuario nombra un agente (`apex-dev`, `apex-bug`, `apex-verifier`, `apex-api-auditor`, `apex-frontend-auditor`, `apex-sql-auditor`, `apex-worker-auditor`, `apex-memory-fixer`, o el id `Apex_*` equivalente) | **Ese agente, directo.** Sin clasificar, sin Engram, sin `.harness/state.md`, sin router de skills, sin verifier. El mensaje del usuario es el encargo. `/harness` o «haz el harness» no entra aquí: sigue el pipeline |
 | `bug`, `error`, `crash`, `exception`, `fails`, `broken`, `regression`, "no funciona", "falla", "se queda", "no carga", "rompe", "petazo", "stack trace", "se cuelga" | **BUG** (subagente Apex_Bug) |
 | `implement`, `add`, `create`, `build`, `feature`, `develop`, `refactor`, `migrate`, "añade", "agrega", "implementa", "crea", "nueva versión de", "soporte para" | **DEV** (subagente Apex_Dev) |
 | Análisis, explicación, exploración, preguntas, planes, revisión de un punto concreto | **Answer directo** del Orchestrator, sin spawn |
