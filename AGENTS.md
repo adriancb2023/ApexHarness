@@ -20,6 +20,7 @@ the coordination.
 | `.opencode/agents/Apex_AuthAuditor.md` | Security squad: authn/authz (SEC-AUTH); readonly. |
 | `.opencode/agents/Apex_SecApiAuditor.md` | Security squad: API AppSec (SEC-API); readonly. |
 | `.opencode/agents/Apex_SecretsAuditor.md` | Security squad: secrets/crypto exposure (SEC-SEC); readonly. |
+| `.opencode/agents/Apex_Hacker.md` | Security squad: defensive trust-boundary and agent-config review (SEC-HACK); readonly. |
 | `.opencode/agents/Apex_SecurityFixer.md` | Security squad: applies one SEC-* secure patch. |
 | `.agents/skills/security-audit-core/` | Security Audit Squad protocol (canonical); Cursor/OpenCode shims point here. |
 | `.opencode/commands/harness.md` | `/harness <task>`: explicit entry to the full protocol. |

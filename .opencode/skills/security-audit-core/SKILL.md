@@ -2,8 +2,9 @@
 name: security-audit-core
 description: >-
   Security Audit Squad protocol. Load it when auditing AppSec in source
-  (injection, auth, API surface, secrets), when emitting a SEC-* finding, or
-  when applying a patch from Apex_SecurityFixer.
+  (injection, auth, API surface, secrets), trust-boundary or agent-config
+  gaps (Apex_Hacker), when emitting a SEC-* finding, or when applying a
+  patch from Apex_SecurityFixer.
 ---
 
 # Security Audit Core (shim)

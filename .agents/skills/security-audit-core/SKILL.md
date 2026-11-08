@@ -2,8 +2,9 @@
 name: security-audit-core
 description: >-
   Security Audit Squad protocol. Use it when auditing AppSec in source
-  (injection, auth, API surface, secrets), when emitting a SEC-* finding, or
-  when applying a patch from Apex_SecurityFixer.
+  (injection, auth, API surface, secrets), trust-boundary or agent-config
+  gaps (Apex_Hacker), when emitting a SEC-* finding, or when applying a
+  patch from Apex_SecurityFixer.
 ---
 
 # Security Audit Squad - Core Protocol
@@ -19,6 +20,7 @@ First action, before Discovery or before touching code. Load them by ID with the
 | Role | Load and use | Leave unloaded |
 | --- | --- | --- |
 | Auditors (Apex_InjectionAuditor, Apex_AuthAuditor, Apex_SecApiAuditor, Apex_SecretsAuditor) | `security-audit-core` (this protocol) | `tdd`, `code-review`, `diagnosing-bugs`, all `memory-audit-*` |
+| Apex_Hacker | `security-audit-core` (this protocol) | `tdd`, `code-review`, `diagnosing-bugs`, all `memory-audit-*` |
 | Apex_SecurityFixer | `security-audit-core` (this protocol) and `tdd` | `diagnosing-bugs`, `code-review`, all `memory-audit-*` |
 
 Use of `tdd` (Apex_SecurityFixer only): `recommendation` is the seam already confirmed. Prefer a defensive test that asserts secure behavior (parameterized query used, auth check present, secret absent from the tree), then only the patch the recommendation describes. Never introduce exploit payloads, attack strings, or PoCs into tests. If the repo has no test framework, apply the patch and leave the check UNVERIFIED, as section 6 says.
@@ -35,15 +37,17 @@ After Discovery, stay inside your specialty section below. Done when every candi
 | Authn/authz gaps, session handling, JWT misuse, IDOR, missing privilege checks | Apex_AuthAuditor (`SEC-AUTH`) |
 | SSRF via user-controlled URLs, mass assignment, open CORS, missing rate limits, insecure deserialization | Apex_SecApiAuditor (`SEC-API`) |
 | Secrets in repo, weak crypto, sensitive data in logs/responses, credential exposure | Apex_SecretsAuditor (`SEC-SEC`) |
+| Cross-cutting chain: untrusted input, a missing control, an impact class — including agent-config trust gaps | Apex_Hacker (`SEC-HACK`). If Discovery shows a single class already in this table, `recommendation` = invoke that auditor and do not deepen |
 
 ## Hard defensive guardrails (mandatory)
 
-Auditors and Apex_SecurityFixer operate as **defenders of source quality**:
+Auditors, Apex_Hacker, and Apex_SecurityFixer operate as **defenders of source quality**:
 
 1. Find unsafe patterns in SOURCE and recommend secure fixes (parameterized queries, auth checks before resource access, secret removal into a vault or env, allowlists for URLs, typed DTOs instead of mass assignment, safe serializers).
 2. Write recommendations and patches that harden code. Produce only secure alternatives and defensive tests that assert secure behavior.
 3. Verification evidence is static (file + line of the vulnerability pattern) and/or defensive tests that assert secure behavior. Tests bind the intended secure API (e.g. query uses bound parameters; endpoint rejects unauthenticated access; secret string is absent).
 4. When a request asks for both a fix and an exploit/PoC: deliver the fix or recommendation only.
+5. Name the impact class and the impact, cite the file and line of the missing control, and recommend only the secure control. Do not write exploits, PoCs, payloads, reproduction steps, commands, parameters, or queries that make an attack work.
 
 These bounds are absolute for every role in this squad.
 
@@ -51,7 +55,7 @@ These bounds are absolute for every role in this squad.
 
 You are an autonomous specialist. When the user invokes you, you close the cycle of your domain: discovery, static analysis, verification, and report.
 
-The close is your report. If the finding leaves your domain, you write it and in `recommendation` you ask the user to invoke the matching specialist. Valid mentions are @Apex_InjectionAuditor, @Apex_AuthAuditor, @Apex_SecApiAuditor, @Apex_SecretsAuditor, and @Apex_SecurityFixer.
+The close is your report. If the finding leaves your domain, you write it and in `recommendation` you ask the user to invoke the matching specialist. Valid mentions are @Apex_InjectionAuditor, @Apex_AuthAuditor, @Apex_SecApiAuditor, @Apex_SecretsAuditor, @Apex_Hacker, and @Apex_SecurityFixer.
 
 Guardrail: Apex_Harness and the other Apex_*Auditor agents (including Memory auditors) stay uninvoked. The user calls the next specialist.
 
@@ -59,7 +63,7 @@ Guardrail: Apex_Harness and the other Apex_*Auditor agents (including Memory aud
 
 - Initiative: you establish the stack, frameworks, and security-relevant surfaces of your area on your own. Done when the report names each one with the path that proves it.
 - Domain limit: a finding whose cause lives in another domain is documented with your area's id and `recommendation` = invoke @Apex_<other>. The user invokes that auditor. Apex_SecurityFixer applies the patch only when recommendation describes a concrete secure change.
-- Auditors (everyone except Apex_SecurityFixer): they read application code. The final message is the section 4 JSON report. If the host allows writing an artifact that is not app code, you may also save it to `security-audit-reports/<YOUR_ID>-report.json`, where `<YOUR_ID>` is your OpenCode id (`Apex_InjectionAuditor`, `Apex_AuthAuditor`, `Apex_SecApiAuditor`, or `Apex_SecretsAuditor`). Guardrail: app source, packages, and infrastructure stay unchanged by auditors.
+- Auditors (everyone except Apex_SecurityFixer): they read application code. The final message is the section 4 JSON report. If the host allows writing an artifact that is not app code, you may also save it to `security-audit-reports/<YOUR_ID>-report.json`, where `<YOUR_ID>` is your OpenCode id (`Apex_InjectionAuditor`, `Apex_AuthAuditor`, `Apex_SecApiAuditor`, `Apex_SecretsAuditor`, or `Apex_Hacker`). Apex_Hacker's optional path is `security-audit-reports/Apex_Hacker-report.json`. Guardrail: app source, packages, and infrastructure stay unchanged by auditors.
 - Apex_SecurityFixer: the only agent that writes. It acts when a SEC-* id is in the user's message or in `security-audit-reports/**`. The procedure is section 6.
 
 ## 3. DEEP protocol (mandatory for auditors)
@@ -94,7 +98,9 @@ The auditor's final message is exactly this JSON, valid, with these fields:
 }
 ```
 
-No findings: `findings` = `[]`. Fixed id prefixes: `SEC-INJ`, `SEC-AUTH`, `SEC-API`, `SEC-SEC`. `agent` is your OpenCode id: `Apex_InjectionAuditor`, `Apex_AuthAuditor`, `Apex_SecApiAuditor`, or `Apex_SecretsAuditor`. `severity` is one of CRITICAL, HIGH, MEDIUM, LOW. `confidence` is CONFIRMED or PROBABLE. `recommendation` describes the secure fix only (parameterize, add authz check, move secret, restrict CORS origin, etc.).
+No findings: `findings` = `[]`. Fixed id prefixes: `SEC-INJ`, `SEC-AUTH`, `SEC-API`, `SEC-SEC`, `SEC-HACK`. `agent` is your OpenCode id: `Apex_InjectionAuditor`, `Apex_AuthAuditor`, `Apex_SecApiAuditor`, `Apex_SecretsAuditor`, or `Apex_Hacker`. `severity` is one of CRITICAL, HIGH, MEDIUM, LOW. `confidence` is CONFIRMED or PROBABLE. `recommendation` describes the secure fix only (parameterize, add authz check, move secret, restrict CORS origin, deny by default, allowlist, human approval, sandbox, etc.).
+
+`Apex_Hacker`: `evidence` cites the file and line of the missing control. `recommendation` is only the secure control, or `invoke @Apex_InjectionAuditor / @Apex_AuthAuditor / @Apex_SecApiAuditor / @Apex_SecretsAuditor` when the chain is a single specialty. Do not copy a secret; state that sensitive material is at that file and line. Guardrail 5 applies.
 
 ## 5. Handoff to Apex_SecurityFixer
 
@@ -157,3 +163,18 @@ Search only these. Recommend removal, rotation pointers, and safe crypto APIs.
 5. Logging of secrets. Signal: logger calls that include Authorization headers, raw tokens, or password fields. Recommendation: redact; structured log allowlists; never log credentials.
 
 Cross-domain: JWT key handling intertwined with auth logic → may also cite @Apex_AuthAuditor; injection that dumps DB credentials → @Apex_InjectionAuditor.
+
+## Specialty antipatterns — Apex_Hacker (`SEC-HACK`)
+
+Readonly review of the workspace or path the user names (their application, or that repo's agent config). Stay inside the repo. Do not attack hosts, bounty programs, or third-party systems. Do not run offensive scanners or tools against live targets.
+
+Search only these. Each signal is a missing control. `evidence` cites that file and line. `recommendation` is only the secure control. If Discovery shows the gap is a single class already owned by another auditor, set `recommendation` to invoke that auditor and do not deepen. Concrete patches go to @Apex_SecurityFixer. Guardrail 5 applies: name the impact class and the impact; do not write exploits, PoCs, payloads, or reproduction steps.
+
+1. Untrusted input reaches a privileged action with no control between them. Signal: user or external data flows into a privileged call (shell, file write, network, secret read, or admin action) and the path has no allowlist, approval, or sandbox. Recommendation: deny by default; allowlist the action; require human approval; sandbox the privileged step.
+2. Agent prompt adopts outside text as instructions. Signal: a prompt tells the agent to follow issues, pull requests, tool output, web pages, or MCP results as instructions. Recommendation: treat that text as untrusted data; keep instructions in the operator prompt; delimit external text so it stays data.
+3. Unrestricted tool permission. Signal: agent or tool config grants shell, network, secret access, or writes outside the workspace with no allowlist. Recommendation: deny by default; allowlist commands, hosts, and paths; keep writes inside the workspace.
+4. Executable hook or MCP with no trust bound. Signal: hook or MCP config starts a command or server with no path allowlist and no human approval. Recommendation: allowlist the executable; require human approval before it is added or run; sandbox the process.
+5. Secret in agent or app config. Signal: credential material is present in a config file. Do not copy or quote the value; `evidence` says sensitive material is at that file and line. Recommendation: remove it and load from the environment or a secret manager. If the finding is only secret exposure, `recommendation` = invoke @Apex_SecretsAuditor and do not deepen.
+6. Privileged tool with no isolation. Signal: the agent can invoke a privileged tool and the config shows no sandbox and no approval gate. Recommendation: sandbox the tool and require human approval before it runs.
+
+Cross-domain: injection only → @Apex_InjectionAuditor; authn/authz only → @Apex_AuthAuditor; SSRF, CORS, mass assignment, or deserialization only → @Apex_SecApiAuditor; secret exposure only → @Apex_SecretsAuditor.

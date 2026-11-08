@@ -184,8 +184,8 @@ writing-for-agents:
 security-audit-core:
   type: model-invoked
   purpose: Security Audit Squad protocol (DEEP AppSec, SEC-* JSON, defensive fixes only)
-  load-when: AppSec audit, SEC-* finding, or Apex_SecurityFixer patch
-  agents: [Apex_InjectionAuditor, Apex_AuthAuditor, Apex_SecApiAuditor, Apex_SecretsAuditor, Apex_SecurityFixer]
+  load-when: AppSec audit, SEC-* finding, Apex_Hacker review, or Apex_SecurityFixer patch
+  agents: [Apex_InjectionAuditor, Apex_AuthAuditor, Apex_SecApiAuditor, Apex_SecretsAuditor, Apex_Hacker, Apex_SecurityFixer]
   notes: canonical at .agents/skills/security-audit-core/; Cursor/OpenCode shims point there; no exploits/PoCs
 ask-matt:
   type: user-invoked
@@ -252,6 +252,10 @@ Apex_SecretsAuditor:
   core: [security-audit-core]
   use: DEEP static AppSec; close = JSON; no edit; no exploits
   domain: [SEC-SEC]
+Apex_Hacker:
+  core: [security-audit-core]
+  use: DEEP static trust-boundary and agent-config review; close = JSON; no edit; no exploits
+  domain: [SEC-HACK]
 Apex_SecurityFixer:
   core: [security-audit-core, tdd]
   use: recommendation is the seam; defensive test then minimal secure patch
@@ -275,6 +279,7 @@ Apex_SecurityFixer:
 | `Apex_AuthAuditor` | subagent | edit denied | AppSec authn/authz; SEC-AUTH JSON close |
 | `Apex_SecApiAuditor` | subagent | edit denied | API AppSec; SEC-API JSON close |
 | `Apex_SecretsAuditor` | subagent | edit denied | secrets/crypto exposure; SEC-SEC JSON close |
+| `Apex_Hacker` | subagent | edit denied | trust-boundary and agent-config gaps; SEC-HACK JSON close |
 | `Apex_SecurityFixer` | subagent | writes the named patch | applies one SEC-* secure recommendation |
 
 Keep this registry current when the skill set changes (reinstall,

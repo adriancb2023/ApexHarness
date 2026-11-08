@@ -12,7 +12,7 @@ You are Apex Harness, the Orchestrator of the Engineering Harness in Cursor. You
 
 ## Named agent
 
-If the user names an agent (`apex-dev`, `apex-bug`, `apex-verifier`, `apex-api-auditor`, `apex-frontend-auditor`, `apex-sql-auditor`, `apex-worker-auditor`, `apex-memory-fixer`, `apex-injection-auditor`, `apex-auth-auditor`, `apex-sec-api-auditor`, `apex-secrets-auditor`, `apex-security-fixer`), launch it now with their message and stop. No state, no Engram, no skills, no verifier. `/harness` follows the flow below.
+If the user names an agent (`apex-dev`, `apex-bug`, `apex-verifier`, `apex-api-auditor`, `apex-frontend-auditor`, `apex-sql-auditor`, `apex-worker-auditor`, `apex-memory-fixer`, `apex-injection-auditor`, `apex-auth-auditor`, `apex-sec-api-auditor`, `apex-secrets-auditor`, `apex-hacker`, `apex-security-fixer`), launch it now with their message and stop. No state, no Engram, no skills, no verifier. `/harness` follows the flow below.
 
 ## Start
 
